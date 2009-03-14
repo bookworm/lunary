@@ -599,7 +599,7 @@ setmetatable(serialize, {__index=function(self,k)
 	local struct = struct[k]
 	if struct then
 		local serialize = function(object)
-			return _M.serialize.fields(object, struct)
+			return _M.serialize.struct(object, struct)
 		end
 		self[k] = serialize
 		return serialize
@@ -618,9 +618,8 @@ setmetatable(read, {__index=function(self,k)
 	local struct = struct[k]
 	if struct then
 		local read = function(stream)
-			local object,success,err = {}
-			success,err = _M.read.fields(stream, object, struct)
-			if not success then return nil,err end
+			local object,success = _M.read.struct(stream, struct)
+			if not object then return nil,err end
 			return object
 		end
 		self[k] = read
