@@ -4,6 +4,7 @@ serialize = {}
 read = {}
 write = {}
 struct = {}
+fstruct = {}
 
 local function warning(message, level)
 	if not level then
@@ -603,6 +604,14 @@ setmetatable(serialize, {__index=function(self,k)
 		self[k] = serialize
 		return serialize
 	end
+	local fstruct = fstruct[k]
+	if fstruct then
+		local serialize = function(object)
+			return _M.serialize.fstruct(object, fstruct)
+		end
+		self[k] = serialize
+		return serialize
+	end
 end})
 
 setmetatable(read, {__index=function(self,k)
@@ -612,6 +621,16 @@ setmetatable(read, {__index=function(self,k)
 			local object,success,err = {}
 			success,err = _M.read.fields(stream, object, struct)
 			if not success then return nil,err end
+			return object
+		end
+		self[k] = read
+		return read
+	end
+	local fstruct = fstruct[k]
+	if fstruct then
+		local read = function(stream)
+			local object,err = _M.read.fstruct(stream, fstruct)
+			if not object then return nil,err end
 			return object
 		end
 		self[k] = read
