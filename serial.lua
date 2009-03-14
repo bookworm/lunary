@@ -707,3 +707,30 @@ function buffer_methods:length()
 	return data and #data or 0
 end
 
+------------------------------------------------------------------------------
+
+local filestream_methods = {}
+local filestream_mt = {__index=filestream_methods}
+
+function filestream(file)
+	if io.type(file)~='file' then
+		error("bad argument #1 to filestream (file expected, got "..(io.type(file) or type(file))..")", 2)
+	end
+	return setmetatable({file=file}, filestream_mt)
+end
+
+local smatch = string.match
+function filestream_methods:receive(pattern, prefix)
+	local prefix = prefix or ""
+	local file = self.file
+	if smatch(pattern, "^%*a") then
+		return prefix..file:read(pattern)
+	elseif smatch(pattern, "^%*l") then
+		return prefix..file:read(pattern)
+	elseif type(pattern)=='number' then
+		return prefix..file:read(pattern)
+	else
+		return nil,"unknown pattern"
+	end
+end
+
