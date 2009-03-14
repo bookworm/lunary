@@ -223,12 +223,12 @@ function serialize.enum(value, enum, int_t, ...)
 		ivalue = enum[value]
 	end
 	assert(ivalue, "unknown enum string '"..tostring(value).."'")
-	local serialize = assert(serialize[int_t], "unknown integer type '"..tostring(int_t).."'")
+	local serialize = assert(serialize[int_t], "unknown integer type "..tostring(int_t).."")
 	return serialize(ivalue, ...)
 end
 
 function read.enum(stream, enum, int_t, ...)
-	local read = assert(read[int_t], "unknown integer type '"..tostring(int_t).."'")
+	local read = assert(read[int_t], "unknown integer type "..tostring(int_t).."")
 	local value,err = read(stream, ...)
 	if not value then
 		return nil,err
