@@ -251,12 +251,12 @@ function serialize.flags(value, flagset, int_t, ...)
 		int = int + flagset[flag]
 	end
 	value = int
-	local serialize = assert(serialize[int_t], "unknown integer type '"..tostring(int_t).."'")
+	local serialize = assert(serialize[int_t], "unknown integer type "..tostring(int_t).."")
 	return serialize(value, ...)
 end
 
 function read.flags(stream, flagset, int_t, ...)
-	local read = assert(read[int_t], "unknown integer type '"..tostring(int_t).."'")
+	local read = assert(read[int_t], "unknown integer type "..tostring(int_t).."")
 	local int,err = read(stream, ...)
 	if not int then
 		return nil,err
@@ -288,7 +288,7 @@ end
 ------------------------------------------------------------------------------
 
 function serialize.sizedbuffer(value, size_t, ...)
-	local serialize = assert(serialize[size_t], "unknown size type '"..tostring(size_t).."'")
+	local serialize = assert(serialize[size_t], "unknown size type "..tostring(size_t).."")
 	local size = #value
 	local ssize,err = serialize(size, ...)
 	if not ssize then return nil,err end
@@ -296,7 +296,7 @@ function serialize.sizedbuffer(value, size_t, ...)
 end
 
 function read.sizedbuffer(stream, size_t, ...)
-	local read = assert(read[size_t], "unknown size type '"..tostring(size_t).."'")
+	local read = assert(read[size_t], "unknown size type "..tostring(size_t).."")
 	local size,err = read(stream, ...)
 	if not size then return nil,err end
 	local value,err = stream:receive(size)
@@ -307,7 +307,7 @@ end
 ------------------------------------------------------------------------------
 
 function serialize.array(value, size, value_t, ...)
-	local serialize = assert(serialize[value_t], "unknown value type '"..tostring(value_t).."'")
+	local serialize = assert(serialize[value_t], "unknown value type "..tostring(value_t).."")
 	if size=='*' then
 		size = #value
 	end
@@ -322,7 +322,7 @@ function serialize.array(value, size, value_t, ...)
 end
 
 function read.array(stream, size, value_t, ...)
-	local read = assert(read[value_t], "unknown value type '"..tostring(value_t).."'")
+	local read = assert(read[value_t], "unknown value type "..tostring(value_t).."")
 	local value = {}
 	if size=='*' then
 		assert(stream.length, "infinite arrays can only be read from buffers, not infinite streams")
@@ -349,8 +349,8 @@ function serialize.sizedvalue(value, size_t, value_t)
 	assert(type(value_t)=='table', "value type definition should be an array")
 	assert(value_t[1], "value type definition array is empty")
 	-- get serialization functions
-	local size_serialize = assert(serialize[size_t[1]], "unknown size type '"..tostring(size_t[1]).."'")
-	local value_serialize = assert(serialize[value_t[1]], "unknown value type '"..tostring(value_t[1]).."'")
+	local size_serialize = assert(serialize[size_t[1]], "unknown size type "..tostring(size_t[1]).."")
+	local value_serialize = assert(serialize[value_t[1]], "unknown value type "..tostring(value_t[1]).."")
 	-- serialize value
 	local svalue,err = value_serialize(value, unpack(value_t, 2))
 	if not svalue then return nil,err end
@@ -370,8 +370,8 @@ function read.sizedvalue(stream, size_t, value_t)
 	assert(type(value_t)=='table', "value type definition should be an array")
 	assert(value_t[1], "value type definition array is empty")
 	-- get serialization functions
-	local size_read = assert(read[size_t[1]], "unknown size type '"..tostring(size_t[1]).."'")
-	local value_read = assert(read[value_t[1]], "unknown size type '"..tostring(value_t[1]).."'")
+	local size_read = assert(read[size_t[1]], "unknown size type "..tostring(size_t[1]).."")
+	local value_read = assert(read[value_t[1]], "unknown size type "..tostring(value_t[1]).."")
 	-- read size
 	local size,err = size_read(stream, unpack(size_t, 2))
 	if not size then return nil,err end
@@ -385,7 +385,7 @@ function read.sizedvalue(stream, size_t, value_t)
 	if not value then return nil,err end
 	-- if the buffer is not empty save trailing bytes or generate an error
 	if bvalue:length() > 0 then
-		local msg = "trailing bytes in sized value not read by value serializer '"..tostring(value_t[1]).."'"
+		local msg = "trailing bytes in sized value not read by value serializer "..tostring(value_t[1])..""
 		if type(value)=='table' then
 			warning(msg)
 			value.__trailing_bytes = bvalue:receive("*a")
@@ -405,7 +405,7 @@ function serialize.sizedarray(value, size_t, value_t)
 	assert(value_t[1], "value type definition array is empty")
 	local data,temp,err = ""
 	-- get serialization functions
-	local size_serialize = assert(serialize[size_t[1]], "unknown size type '"..tostring(size_t[1]).."'")
+	local size_serialize = assert(serialize[size_t[1]], "unknown size type "..tostring(size_t[1]).."")
 	-- serialize size
 	local size = #value
 	temp,err = size_serialize(size, unpack(size_t, 2))
@@ -425,7 +425,7 @@ function read.sizedarray(stream, size_t, value_t)
 	assert(type(value_t)=='table', "value type definition should be an array")
 	assert(value_t[1], "value type definition array is empty")
 	-- get serialization functions
-	local size_read = assert(read[size_t[1]], "unknown size type '"..tostring(size_t[1]).."'")
+	local size_read = assert(read[size_t[1]], "unknown size type "..tostring(size_t[1]).."")
 	-- read size
 	local size,err = size_read(stream, unpack(size_t, 2))
 	if not size then return nil,err end
