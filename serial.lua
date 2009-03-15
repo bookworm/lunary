@@ -1,5 +1,7 @@
 module((...), package.seeall)
 
+local util = require(_NAME..".util")
+
 serialize = {}
 read = {}
 write = {}
@@ -482,6 +484,36 @@ end
 
 function read.bytes(stream, count)
 	return stream:receive(count)
+end
+
+------------------------------------------------------------------------------
+
+function serialize.bytes2hex(value, count)
+	assert(type(value)=='string', "bytes2hex value is not a string")
+	value = util.hex2bin(value)
+	assert(#value==count, "byte string has not the correct length")
+	return value
+end
+
+function read.bytes2hex(stream, count)
+	local value,err = stream:receive(count)
+	if not value then return value,err end
+	return util.bin2hex(value)
+end
+
+------------------------------------------------------------------------------
+
+function serialize.bytes2base32(value, count)
+	assert(type(value)=='string', "bytes2base32 value is not a string")
+	value = util.base322bin(value)
+	assert(#value==count, "byte string has not the correct length")
+	return value
+end
+
+function read.bytes2base32(stream, count)
+	local value,err = stream:receive(count)
+	if not value then return value,err end
+	return util.bin2base32(value)
 end
 
 ------------------------------------------------------------------------------
