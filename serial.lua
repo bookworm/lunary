@@ -300,6 +300,9 @@ function read.sizedbuffer(stream, size_t, ...)
 	local read = assert(read[size_t], "unknown size type "..tostring(size_t).."")
 	local size,err = read(stream, ...)
 	if not size then return nil,err end
+	if stream.length then
+		assert(stream:length() >= size, "invalid sizedbuffer size, stream is too short")
+	end
 	local value,err = stream:receive(size)
 	if not value then return nil,err end
 	return value
