@@ -740,11 +740,17 @@ function filestream_methods:receive(pattern, prefix)
 	local prefix = prefix or ""
 	local file = self.file
 	if smatch(pattern, "^%*a") then
-		return prefix..file:read(pattern)
+		local data,err = file:read(pattern)
+		if not data then return data,err end
+		return prefix..data
 	elseif smatch(pattern, "^%*l") then
-		return prefix..file:read(pattern)
+		local data,err = file:read(pattern)
+		if not data then return data,err end
+		return prefix..data
 	elseif type(pattern)=='number' then
-		return prefix..file:read(pattern)
+		local data,err = file:read(pattern)
+		if not data then return data,err end
+		return prefix..data
 	else
 		return nil,"unknown pattern"
 	end
