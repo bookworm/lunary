@@ -127,32 +127,85 @@ end
 
 ------------------------------------------------------------------------------
 
-function serialize.uint64(value, endianness, scrambler)
-	if value < 0 or value >= 2^64 or math.floor(value)~=value then
-		error("invalid value")
+local maxbytes = {}
+do
+	function n(a,b,c,d,e,f,g,h) return (((((((a or 0) * 256 + (b or 0)) * 256 + (c or 0)) * 256 + (d or 0)) * 256 + (e or 0)) * 256 + (f or 0)) * 256 + (g or 0)) * 256 + (h or 0) end
+	-- find maximum byte values
+	local a,b,c,d,e,f,g,h
+	local ma,mb,mc,md,me,mf,mg,mh
+	for i=1,8 do
+		a,b,c,d,e,f,g,h = 000,000,000,000,000,000,2^i-1,255; if n(a,b,c,d,e,f,g,0) ~= n(a,b,c,d,e,f,g,1) then ma,mb,mc,md,me,mf,mg,mh = a,b,c,d,e,f,g,h end
 	end
-	local h = value % 256
-	value = (value - h) / 256
-	local g = value % 256
-	value = (value - g) / 256
-	local f = value % 256
-	value = (value - f) / 256
-	local e = value % 256
-	value = (value - e) / 256
-	local d = value % 256
-	value = (value - d) / 256
-	local c = value % 256
-	value = (value - c) / 256
-	local b = value % 256
-	value = (value - b) / 256
-	local a = value % 256
+	for i=1,8 do
+		a,b,c,d,e,f,g,h = 000,000,000,000,000,2^i-1,255,255; if n(a,b,c,d,e,f,g,0) ~= n(a,b,c,d,e,f,g,1) then ma,mb,mc,md,me,mf,mg,mh = a,b,c,d,e,f,g,h end
+	end
+	for i=1,8 do
+		a,b,c,d,e,f,g,h = 000,000,000,000,2^i-1,255,255,255; if n(a,b,c,d,e,f,g,0) ~= n(a,b,c,d,e,f,g,1) then ma,mb,mc,md,me,mf,mg,mh = a,b,c,d,e,f,g,h end
+	end
+	for i=1,8 do
+		a,b,c,d,e,f,g,h = 000,000,000,2^i-1,255,255,255,255; if n(a,b,c,d,e,f,g,0) ~= n(a,b,c,d,e,f,g,1) then ma,mb,mc,md,me,mf,mg,mh = a,b,c,d,e,f,g,h end
+	end
+	for i=1,8 do
+		a,b,c,d,e,f,g,h = 000,000,2^i-1,255,255,255,255,255; if n(a,b,c,d,e,f,g,0) ~= n(a,b,c,d,e,f,g,1) then ma,mb,mc,md,me,mf,mg,mh = a,b,c,d,e,f,g,h end
+	end
+	for i=1,8 do
+		a,b,c,d,e,f,g,h = 000,2^i-1,255,255,255,255,255,255; if n(a,b,c,d,e,f,g,0) ~= n(a,b,c,d,e,f,g,1) then ma,mb,mc,md,me,mf,mg,mh = a,b,c,d,e,f,g,h end
+	end
+	for i=1,8 do
+		a,b,c,d,e,f,g,h = 2^i-1,255,255,255,255,255,255,255; if n(a,b,c,d,e,f,g,0) ~= n(a,b,c,d,e,f,g,1) then ma,mb,mc,md,me,mf,mg,mh = a,b,c,d,e,f,g,h end
+	end
+	assert(ma)
+	assert(mb)
+	assert(mc)
+	assert(md)
+	assert(me)
+	assert(mf)
+	assert(mg)
+	assert(mh)
+	maxbytes.uint64 = {ma,mb,mc,md,me,mf,mg,mh}
+end
+
+function serialize.uint64(value, endianness, scrambler)
 	local data
-	if endianness=='le' then
-		data = string.char(h, g, f, e, d, c, b, a)
-	elseif endianness=='be' then
-		data = string.char(a, b, c, d, e, f, g, h)
+	local tvalue = type(value)
+	if tvalue=='number' then
+		if value < 0 or value >= 2^64 or math.floor(value)~=value then
+			error("invalid value")
+		end
+		local h = value % 256
+		value = (value - h) / 256
+		local g = value % 256
+		value = (value - g) / 256
+		local f = value % 256
+		value = (value - f) / 256
+		local e = value % 256
+		value = (value - e) / 256
+		local d = value % 256
+		value = (value - d) / 256
+		local c = value % 256
+		value = (value - c) / 256
+		local b = value % 256
+		value = (value - b) / 256
+		local a = value % 256
+		if endianness=='le' then
+			data = string.char(h, g, f, e, d, c, b, a)
+		elseif endianness=='be' then
+			data = string.char(a, b, c, d, e, f, g, h)
+		else
+			error("unknown endianness")
+		end
+	elseif tvalue=='string' then
+		assert(#value==8)
+		-- uint64 as string is little-endian
+		if endianness=='le' then
+			data = value
+		elseif endianness=='be' then
+			data = value:reverse()
+		else
+			error("unknown endianness")
+		end
 	else
-		error("unknown endianness")
+		error("uint64 value must be a number or a string")
 	end
 	if scrambler then
 		data = scrambler(data)
@@ -176,7 +229,17 @@ function read.uint64(stream, endianness, scrambler)
 	else
 		error("unknown endianness")
 	end
-	return ((((((a * 256 + b) * 256 + c) * 256 + d) * 256 + e) * 256 + f) * 256 + g) * 256 + h
+	local ma,mb,mc,md,me,mf,mg,mh = unpack(maxbytes.uint64)
+	if a>ma or b>mb or c>mc or d>md or e>me or f>mf or g>mg or h>mh then
+		-- uint64 as string is little-endian
+		if endianness=='le' then
+			return data
+		else
+			return data:reverse()
+		end
+	else
+		return ((((((a * 256 + b) * 256 + c) * 256 + d) * 256 + e) * 256 + f) * 256 + g) * 256 + h
+	end
 end
 
 ------------------------------------------------------------------------------
