@@ -470,16 +470,14 @@ end
 
 ------------------------------------------------------------------------------
 
-function serialize.bytes(value)
+function serialize.bytes(value, count)
+	assert(type(value)=='string', "bytes value is not a string")
+	assert(#value==count, "byte string has not the correct length")
 	return value
 end
 
 function read.bytes(stream, count)
-	local data,err = stream:receive(count)
-	if not data then
-		return nil,err
-	end
-	return data
+	return stream:receive(count)
 end
 
 ------------------------------------------------------------------------------
@@ -618,9 +616,7 @@ setmetatable(read, {__index=function(self,k)
 	local struct = struct[k]
 	if struct then
 		local read = function(stream)
-			local object,success = _M.read.struct(stream, struct)
-			if not object then return nil,err end
-			return object
+			return _M.read.struct(stream, struct)
 		end
 		self[k] = read
 		return read
@@ -628,9 +624,7 @@ setmetatable(read, {__index=function(self,k)
 	local fstruct = fstruct[k]
 	if fstruct then
 		local read = function(stream)
-			local object,err = _M.read.fstruct(stream, fstruct)
-			if not object then return nil,err end
-			return object
+			return _M.read.fstruct(stream, fstruct)
 		end
 		self[k] = read
 		return read
