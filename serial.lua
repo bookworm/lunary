@@ -5,6 +5,7 @@ read = {}
 write = {}
 struct = {}
 fstruct = {}
+alias = {}
 
 local function warning(message, level)
 	if not level then
@@ -610,6 +611,17 @@ setmetatable(serialize, {__index=function(self,k)
 		self[k] = serialize
 		return serialize
 	end
+	local alias = alias[k]
+	if alias then
+		assert(type(alias)=='table', "alias type definition should be an array")
+		assert(alias[1], "alias type definition array is empty")
+		local serialize = function(value)
+			local alias_serialize = assert(serialize[alias[1]], "unknown alias type "..tostring(alias[1]).."")
+			return alias_serialize(value, unpack(alias, 2))
+		end
+		self[k] = serialize
+		return serialize
+	end
 end})
 
 setmetatable(read, {__index=function(self,k)
@@ -625,6 +637,17 @@ setmetatable(read, {__index=function(self,k)
 	if fstruct then
 		local read = function(stream)
 			return _M.read.fstruct(stream, fstruct)
+		end
+		self[k] = read
+		return read
+	end
+	local alias = alias[k]
+	if alias then
+		assert(type(alias)=='table', "alias type definition should be an array")
+		assert(alias[1], "alias type definition array is empty")
+		local read = function(stream)
+			local alias_read = assert(read[alias[1]], "unknown alias type "..tostring(alias[1]).."")
+			return alias_read(stream, unpack(alias, 2))
 		end
 		self[k] = read
 		return read
