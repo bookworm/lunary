@@ -298,7 +298,9 @@ function serialize.enum(value, enum, int_t, ...)
 	end
 	assert(ivalue, "unknown enum string '"..tostring(value).."'")
 	local serialize = assert(serialize[int_t], "unknown integer type "..tostring(int_t).."")
-	return serialize(ivalue, ...)
+	local sdata,err = serialize(ivalue, ...)
+	if not sdata then return nil,err end
+	return sdata
 end
 
 function read.enum(stream, enum, int_t, ...)
@@ -325,7 +327,9 @@ function serialize.flags(value, flagset, int_t, ...)
 	end
 	value = int
 	local serialize = assert(serialize[int_t], "unknown integer type "..tostring(int_t).."")
-	return serialize(value, ...)
+	local sdata,err = serialize(value, ...)
+	if not sdata then return nil,err end
+	return sdata
 end
 
 function read.flags(stream, flagset, int_t, ...)
@@ -585,7 +589,9 @@ function serialize.bytes(value, count)
 end
 
 function read.bytes(stream, count)
-	return stream:receive(count)
+	local data,err = stream:receive(count)
+	if not data then return nil,err end
+	return data
 end
 
 ------------------------------------------------------------------------------
@@ -622,10 +628,11 @@ end
 
 function serialize.boolean8(value)
 	if type(value)=='boolean' then
-		return serialize.uint8(value and 1 or 0)
-	else
-		return serialize.uint8(value)
+		value = value and 1 or 0
 	end
+	local sdata,err = serialize.uint8(value)
+	if not sdata then return nil,err end
+	return sdata
 end
 
 function read.boolean8(stream)
