@@ -854,3 +854,7 @@ function filestream_methods:receive(pattern, prefix)
 	end
 end
 
+function filestream_methods:send(data)
+	return self.file:write(data)
+end
+
