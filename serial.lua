@@ -26,13 +26,20 @@ function serialize.uint8(value, scrambler)
 	if value < 0 or value >= 2^8 or math.floor(value)~=value then
 		error("invalid value")
 	end
-	return string.char(a)
+	local data = string.char(a)
+	if scrambler then
+		data = scrambler(data)
+	end
+	return data
 end
 
 function read.uint8(stream, scrambler)
 	local data,err = stream:receive(1)
 	if not data then
 		return nil,err
+	end
+	if scrambler then
+		data = scrambler(data)
 	end
 	return string.byte(data)
 end
