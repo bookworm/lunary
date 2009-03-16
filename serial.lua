@@ -832,22 +832,54 @@ setmetatable(read, {__index=function(self,k)
 	end
 end})
 
+--[=[
+local function wrap(name)
+	local ename = name:gsub("[^%w]", "_")
+	local chunk = assert(loadstring([[
+		local ]]..ename..[[ = ...
+		return select(1, ]]..ename..[[(select(2, ...)))
+	]], name.." wrapper"))
+	if name ~= ename then
+		return loadstring(string.dump(chunk):gsub(ename, name))
+	else
+		return chunk
+	end
+end
+--]=]
+local function wrap(name, f)
+	local ename = name:gsub("[^%w]", "_")
+	local chunk = assert(loadstring([[
+		local ]]..ename..[[ = ...
+		return function(...)
+			return select(1, ]]..ename..[[(...))
+		end
+	]], name.." wrapper"))
+	if name ~= ename then
+		chunk = loadstring(string.dump(chunk):gsub(ename, name))
+	end
+	return chunk(f)
+end
+
+local pack = function(...) return {n=select('#', ...), ...} end
+
 setmetatable(write, {__index=function(self,k)
 	local struct = struct[k]
 	if struct then
 		local write = function(stream, object)
-			return _M.write.struct(stream, object, struct)
+			return select(1, _M.write.struct(stream, object, struct))
 		end
-		self[k] = write
-		return write
+		local wrapper = wrap("write."..k, write)
+		self[k] = wrapper
+		return wrapper
 	end
 	local fstruct = fstruct[k]
 	if fstruct then
 		local write = function(stream, object, ...)
-			return _M.write.fstruct(stream, object, fstruct, ...)
+			return select(1, _M.write.fstruct(stream, object, fstruct, ...))
 		end
-		self[k] = write
-		return write
+		local wrapper = wrap("write."..k, write)
+		self[k] = wrapper
+		return wrapper
 	end
 	local alias = alias[k]
 	if alias then
@@ -855,10 +887,12 @@ setmetatable(write, {__index=function(self,k)
 		assert(alias[1], "alias type definition array is empty")
 		local write = function(stream, value)
 			local write = assert(write[alias[1]], "unknown alias type "..tostring(alias[1]).."")
-			return write(stream, value, unpack(alias, 2))
+			local wrapper = wrap("write."..alias[1], write)
+			return select(1, wrapper(stream, value, unpack(alias, 2)))
 		end
-		self[k] = write
-		return write
+		local wrapper = wrap("write."..k, write)
+		self[k] = wrapper
+		return wrapper
 	end
 	local serialize = serialize[k]
 	if serialize then
