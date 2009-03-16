@@ -858,3 +858,10 @@ function filestream_methods:send(data)
 	return self.file:write(data)
 end
 
+function filestream_methods:length()
+	local cur = self.file:seek()
+	local len = self.file:seek('end')
+	self.file:seek('set', cur)
+	return len - cur
+end
+
