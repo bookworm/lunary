@@ -397,6 +397,19 @@ function serialize.array(value, size, value_t, ...)
 	return data
 end
 
+function write.array(stream, value, size, value_t, ...)
+	local write = assert(write[value_t], "unknown value type "..tostring(value_t).."")
+	if size=='*' then
+		size = #value
+	end
+	assert(size == #value, "provided array size doesn't match")
+	for i=1,size do
+		local success,err = write(stream, value[i], ...)
+		if not success then return nil,err end
+	end
+	return true
+end
+
 function read.array(stream, size, value_t, ...)
 	local read = assert(read[value_t], "unknown value type "..tostring(value_t).."")
 	local value = {}
@@ -493,6 +506,25 @@ function serialize.sizedarray(value, size_t, value_t)
 	data = data .. temp
 	-- return size..array
 	return data
+end
+
+function write.sizedarray(stream, value, size_t, value_t)
+	assert(type(size_t)=='table', "size type definition should be an array")
+	assert(size_t[1], "size type definition array is empty")
+	assert(type(value_t)=='table', "value type definition should be an array")
+	assert(value_t[1], "value type definition array is empty")
+	local success,err
+	-- get serialization functions
+	local size_write = assert(write[size_t[1]], "unknown size type "..tostring(size_t[1]).."")
+	-- write size
+	local size = #value
+	success,err = size_write(stream, size, unpack(size_t, 2))
+	if not success then return nil,err end
+	-- write array itself
+	success,err = write.array(stream, value, size, unpack(value_t))
+	if not success then return nil,err end
+	-- return success
+	return true
 end
 
 function read.sizedarray(stream, size_t, value_t)
@@ -625,6 +657,17 @@ function serialize.struct(value, fields)
 	return data
 end
 
+function write.struct(stream, value, fields)
+	local data = ""
+	for _,field in ipairs(fields) do
+		local name,type = field[1],field[2]
+		local write = assert(write[type], "no function to read field of type "..tostring(type))
+		local success,err = write(stream, value[name], select(3, unpack(field)))
+		if not success then return nil,err end
+	end
+	return true
+end
+
 function read.struct(stream, fields)
 	local object = {}
 	for _,field in ipairs(fields) do
@@ -639,13 +682,14 @@ end
 
 ------------------------------------------------------------------------------
 
-function serialize.fstruct(object, f)
+function serialize.fstruct(object, f, ...)
+	local params = {n=select('#', ...), ...}
 	local str = ""
 	local wrapper = setmetatable({}, {
 		__index = object,
 		__call = function(self, field)
 			return function(type, ...)
-				local serialize = assert(serialize[type], "no function to read field of type "..tostring(type))
+				local serialize = assert(serialize[type], "no function to serialize field of type "..tostring(type))
 				local temp,err = serialize(object[field], ...)
 				if not temp then coroutine.yield(nil, err) end
 				str = str .. temp
@@ -653,7 +697,7 @@ function serialize.fstruct(object, f)
 		end,
 	})
 	local coro = coroutine.wrap(function()
-		f(wrapper)
+		f(wrapper, unpack(params, 1, params.n))
 		return true
 	end)
 	local success,err = coro()
@@ -661,7 +705,29 @@ function serialize.fstruct(object, f)
 	return str
 end
 
-function read.fstruct(stream, f)
+function write.fstruct(stream, object, f, ...)
+	local params = {n=select('#', ...), ...}
+	local wrapper = setmetatable({}, {
+		__index = object,
+		__call = function(self, field)
+			return function(type, ...)
+				local write = assert(write[type], "no function to write field of type "..tostring(type))
+				local success,err = write(stream, object[field], ...)
+				if not success then coroutine.yield(nil, err) end
+			end
+		end,
+	})
+	local coro = coroutine.wrap(function()
+		f(wrapper, unpack(params, 1, params.n))
+		return true
+	end)
+	local success,err = coro()
+	if not success then return nil,err end
+	return true
+end
+
+function read.fstruct(stream, f, ...)
+	local params = {n=select('#', ...), ...}
 	local object = {}
 	local wrapper = setmetatable({}, {
 		__index = object,
@@ -676,7 +742,7 @@ function read.fstruct(stream, f)
 		end,
 	})
 	local coro = coroutine.wrap(function()
-		f(wrapper)
+		f(wrapper, unpack(params, 1, params.n))
 		return true
 	end)
 	local success,err = coro()
@@ -710,8 +776,8 @@ setmetatable(serialize, {__index=function(self,k)
 	end
 	local fstruct = fstruct[k]
 	if fstruct then
-		local serialize = function(object)
-			return _M.serialize.fstruct(object, fstruct)
+		local serialize = function(object, ...)
+			return _M.serialize.fstruct(object, fstruct, ...)
 		end
 		self[k] = serialize
 		return serialize
@@ -740,8 +806,8 @@ setmetatable(read, {__index=function(self,k)
 	end
 	local fstruct = fstruct[k]
 	if fstruct then
-		local read = function(stream)
-			return _M.read.fstruct(stream, fstruct)
+		local read = function(stream, ...)
+			return _M.read.fstruct(stream, fstruct, ...)
 		end
 		self[k] = read
 		return read
@@ -760,6 +826,33 @@ setmetatable(read, {__index=function(self,k)
 end})
 
 setmetatable(write, {__index=function(self,k)
+	local struct = struct[k]
+	if struct then
+		local write = function(stream, object)
+			return _M.write.struct(stream, object, struct)
+		end
+		self[k] = write
+		return write
+	end
+	local fstruct = fstruct[k]
+	if fstruct then
+		local write = function(stream, object, ...)
+			return _M.write.fstruct(stream, object, fstruct, ...)
+		end
+		self[k] = write
+		return write
+	end
+	local alias = alias[k]
+	if alias then
+		assert(type(alias)=='table', "alias type definition should be an array")
+		assert(alias[1], "alias type definition array is empty")
+		local write = function(stream, value)
+			local write = assert(write[alias[1]], "unknown alias type "..tostring(alias[1]).."")
+			return write(stream, value, unpack(alias, 2))
+		end
+		self[k] = write
+		return write
+	end
 	local serialize = serialize[k]
 	if serialize then
 		local write = function(stream, ...)
