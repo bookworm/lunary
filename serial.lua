@@ -251,44 +251,6 @@ end
 
 ------------------------------------------------------------------------------
 
-function serialize.guid(value)
-	local bytes = 0
-	local data = ""
-	for i=0,7 do
-		local byte = value % 256
-		value = (value - byte) / 256
-		if byte ~= 0 then
-			bytes = bytes + 2 ^ i
-			data = data .. serialize.uint8(byte)
-		end
-	end
-	data = serialize.uint8(bytes) .. data
-	return data
-end
-
-function read.guid(stream)
-	local byte,err = read.uint8(stream)
-	if not byte then
-		return nil,err
-	end
-	local bytes = byte
-	local value = 0
-	for i=0,7 do
-		local bit = bytes % 2
-		bytes = (bytes - bit) / 2
-		if bit==1 then
-			byte,err = read.uint8(stream)
-			if not byte then
-				return nil,err
-			end
-			value = value + byte * 256 ^ i
-		end
-	end
-	return value
-end
-
-------------------------------------------------------------------------------
-
 function serialize.enum(value, enum, int_t, ...)
 	local ivalue
 	if type(value)=='number' then
@@ -345,21 +307,6 @@ function read.flags(stream, flagset, int_t, ...)
 		end
 	end
 	return value
-end
-
-------------------------------------------------------------------------------
-
-function serialize.fourcc(value)
-	assert(#value==4, "fourcc value should be 4 bytes long")
-	return value:reverse()
-end
-
-function read.fourcc(stream)
-	local data,err = stream:receive(4)
-	if not data then
-		return nil,err
-	end
-	return data:reverse()
 end
 
 ------------------------------------------------------------------------------
