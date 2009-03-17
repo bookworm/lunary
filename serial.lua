@@ -17,6 +17,7 @@ function warning(message, level)
 end
 
 -- function serialize.typename(value, typeparams...) return string end
+-- function write.typename(stream, value, typeparams...) return true end
 -- function read.typename(stream, typeparams...) return value end
 
 ------------------------------------------------------------------------------
