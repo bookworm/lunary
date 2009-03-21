@@ -968,9 +968,10 @@ local filestream_methods = {}
 local filestream_mt = {__index=filestream_methods}
 
 function filestream(file)
-	if io.type(file)~='file' then
-		error("bad argument #1 to filestream (file expected, got "..(io.type(file) or type(file))..")", 2)
-	end
+	-- assume the passed object behaves like a file
+--	if io.type(file)~='file' then
+--		error("bad argument #1 to filestream (file expected, got "..(io.type(file) or type(file))..")", 2)
+--	end
 	return setmetatable({file=file}, filestream_mt)
 end
 
