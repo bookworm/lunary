@@ -693,13 +693,13 @@ function read.fstruct(stream, f, ...)
 		__index = object,
 		__newindex = object,
 		__call = function(self, field)
-			return function(type, ...)
+			return --[[util.wrap("field "..field, ]]function(type, ...)
 				local read = read[type]
 				if not read then error("no function to read field of type "..tostring(type)) end
 				local value,err = read(stream, ...)
 				if value==nil then cyield(nil, err) end
 				object[field] = value
-			end
+			end--[[)]]
 		end,
 	})
 	local coro = cwrap(function()
