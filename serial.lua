@@ -686,27 +686,22 @@ function write.fstruct(stream, object, f, ...)
 	return true
 end
 
-local wrapper_cache = setmetatable({}, {__mode='k'})
 function read.fstruct(stream, f, ...)
 	local params = {n=select('#', ...), ...}
 	local object = {}
-	local wrapper = wrapper_cache[f]
-	if wrapper==nil then
-		wrapper = setmetatable({}, {
-			__index = object,
-			__newindex = object,
-			__call = function(self, field)
-				return function(type, ...)
-					local read = read[type]
-					if not read then error("no function to read field of type "..tostring(type)) end
-					local value,err = read(stream, ...)
-					if value==nil then cyield(nil, err) end
-					object[field] = value
-				end
-			end,
-		})
-		wrapper_cache[f] = wrapper
-	end
+	local wrapper = setmetatable({}, {
+		__index = object,
+		__newindex = object,
+		__call = function(self, field)
+			return function(type, ...)
+				local read = read[type]
+				if not read then error("no function to read field of type "..tostring(type)) end
+				local value,err = read(stream, ...)
+				if value==nil then cyield(nil, err) end
+				object[field] = value
+			end
+		end,
+	})
 	local coro = cwrap(function()
 		f(wrapper, unpack(params, 1, params.n))
 		return true
