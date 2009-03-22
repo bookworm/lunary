@@ -637,6 +637,8 @@ end
 
 ------------------------------------------------------------------------------
 
+local cyield = coroutine.yield
+
 function serialize.fstruct(object, f, ...)
 	local params = {n=select('#', ...), ...}
 	local str = ""
@@ -644,9 +646,10 @@ function serialize.fstruct(object, f, ...)
 		__index = object,
 		__call = function(self, field)
 			return function(type, ...)
-				local serialize = assert(serialize[type], "no function to serialize field of type "..tostring(type))
+				local serialize = serialize[type]
+				if not serialize then error("no function to serialize field of type "..tostring(type)) end
 				local temp,err = serialize(object[field], ...)
-				if not temp then coroutine.yield(nil, err) end
+				if not temp then cyield(nil, err) end
 				str = str .. temp
 			end
 		end,
@@ -666,9 +669,10 @@ function write.fstruct(stream, object, f, ...)
 		__index = object,
 		__call = function(self, field)
 			return function(type, ...)
-				local write = assert(write[type], "no function to write field of type "..tostring(type))
+				local write = write[type]
+				if not write then error("no function to write field of type "..tostring(type)) end
 				local success,err = write(stream, object[field], ...)
-				if not success then coroutine.yield(nil, err) end
+				if not success then cyield(nil, err) end
 			end
 		end,
 	})
@@ -689,9 +693,10 @@ function read.fstruct(stream, f, ...)
 		__newindex = object,
 		__call = function(self, field)
 			return function(type, ...)
-				local read = assert(read[type], "no function to read field of type "..tostring(type))
+				local read = read[type]
+				if not read then error("no function to read field of type "..tostring(type)) end
 				local value,err = read(stream, ...)
-				if value==nil then coroutine.yield(nil, err) end
+				if value==nil then cyield(nil, err) end
 				object[field] = value
 			end
 		end,
