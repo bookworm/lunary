@@ -174,3 +174,34 @@ function bin2base32(value)
 	return hex2base32(bin2hex(value))
 end
 
+--[=[
+function wrap(name)
+	local ename = name:gsub("[^%w]", "_")
+	local chunk = assert(loadstring([[
+		local ]]..ename..[[ = ...
+		return select(1, ]]..ename..[[(select(2, ...)))
+	]], name.." wrapper"))
+	if name ~= ename then
+		return loadstring(string.dump(chunk):gsub(ename, name))
+	else
+		return chunk
+	end
+end
+--]=]
+function wrap(name, f)
+	return f
+--[=[
+	local ename = name:gsub("[^%w]", "_")
+	local chunk = assert(loadstring([[
+		local ]]..ename..[[ = ...
+		return function(...)
+			return select(1, ]]..ename..[[(...))
+		end
+	]], name.." wrapper"))
+	if name ~= ename then
+		chunk = loadstring(string.dump(chunk):gsub(ename, name))
+	end
+	return chunk(f)
+--]=]
+end
+
