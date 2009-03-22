@@ -638,6 +638,7 @@ end
 ------------------------------------------------------------------------------
 
 local cyield = coroutine.yield
+local cwrap,unpack = coroutine.wrap,unpack
 
 function serialize.fstruct(object, f, ...)
 	local params = {n=select('#', ...), ...}
@@ -654,7 +655,7 @@ function serialize.fstruct(object, f, ...)
 			end
 		end,
 	})
-	local coro = coroutine.wrap(function()
+	local coro = cwrap(function()
 		f(wrapper, unpack(params, 1, params.n))
 		return true
 	end)
@@ -676,7 +677,7 @@ function write.fstruct(stream, object, f, ...)
 			end
 		end,
 	})
-	local coro = coroutine.wrap(function()
+	local coro = cwrap(function()
 		f(wrapper, unpack(params, 1, params.n))
 		return true
 	end)
@@ -706,7 +707,7 @@ function read.fstruct(stream, f, ...)
 		})
 		wrapper_cache[f] = wrapper
 	end
-	local coro = coroutine.wrap(function()
+	local coro = cwrap(function()
 		f(wrapper, unpack(params, 1, params.n))
 		return true
 	end)
