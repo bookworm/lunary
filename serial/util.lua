@@ -1,5 +1,12 @@
 module((...), package.seeall)
 
+local tinsert = table.insert
+local tconcat = table.concat
+local sformat = string.format
+local schar = string.char
+local mfloor = math.floor
+local tonumber = tonumber
+
 function enum(name2value)
 	local self = {}
 	for k,v in pairs(name2value) do
@@ -13,17 +20,17 @@ function bin2hex(bin)
 	local hex = {}
 	bin = {bin:byte(1,#bin)}
 	for i=1,#bin do
-		table.insert(hex, string.format("%X%X", math.floor(bin[i]/16), bin[i]%16))
+		tinsert(hex, sformat("%X%X", mfloor(bin[i]/16), bin[i]%16))
 	end
-	return table.concat(hex)
+	return tconcat(hex)
 end
 
 function hex2bin(hex)
 	local bin = {}
 	for i=1,#hex/2 do
-		table.insert(bin, string.char(tonumber("0X"..hex:sub(2*i-1, 2*i))))
+		tinsert(bin, schar(tonumber("0X"..hex:sub(2*i-1, 2*i))))
 	end
-	return table.concat(bin)
+	return tconcat(bin)
 end
 
 local conversion = {}
