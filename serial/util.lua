@@ -1,5 +1,14 @@
 module((...), package.seeall)
 
+local optim
+do
+	local success
+	success,optim = pcall(require, 'serial.optim')
+	if not success then
+		optim = nil
+	end
+end
+
 local tinsert = table.insert
 local tconcat = table.concat
 local sformat = string.format
@@ -16,13 +25,17 @@ function enum(name2value)
 	return self
 end
 
-function bin2hex(bin)
-	local hex = {}
-	bin = {bin:byte(1,#bin)}
-	for i=1,#bin do
-		tinsert(hex, sformat("%X%X", mfloor(bin[i]/16), bin[i]%16))
+if optim then
+	bin2hex = optim.bin2hex
+else
+	function bin2hex(bin)
+		local hex = {}
+		bin = {bin:byte(1,#bin)}
+		for i=1,#bin do
+			tinsert(hex, sformat("%X%X", mfloor(bin[i]/16), bin[i]%16))
+		end
+		return tconcat(hex)
 	end
-	return tconcat(hex)
 end
 
 function hex2bin(hex)
