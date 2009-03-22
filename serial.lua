@@ -915,33 +915,40 @@ end
 local filestream_methods = {}
 local filestream_mt = {__index=filestream_methods}
 
-function filestream(file)
+function filestream(file, verbose)
 	-- assume the passed object behaves like a file
 --	if io.type(file)~='file' then
 --		error("bad argument #1 to filestream (file expected, got "..(io.type(file) or type(file))..")", 2)
 --	end
-	return setmetatable({file=file}, filestream_mt)
+	local self = setmetatable({file=file, verbose=verbose}, filestream_mt)
+	if self.verbose then
+		self.len = self:length()
+		self.cur = 0
+		io.write(string.format("read: %.2f%% (%d / %d)", 0, 0, self.len))
+	end
+	return self
 end
 
 local smatch = string.match
 function filestream_methods:receive(pattern, prefix)
 	local prefix = prefix or ""
 	local file = self.file
+	local data,err
 	if smatch(pattern, "^%*a") then
-		local data,err = file:read(pattern)
-		if not data then return data,err end
-		return prefix..data
+		data,err = file:read(pattern)
 	elseif smatch(pattern, "^%*l") then
-		local data,err = file:read(pattern)
-		if not data then return data,err end
-		return prefix..data
+		data,err = file:read(pattern)
 	elseif type(pattern)=='number' then
-		local data,err = file:read(pattern)
-		if not data then return data,err end
-		return prefix..data
+		data,err = file:read(pattern)
 	else
 		return nil,"unknown pattern"
 	end
+	if not data then return data,err end
+	if self.verbose then
+		self.cur = self.cur + #data
+		io.write(string.format("\rread: %.2f%% (%d / %d)", (self.cur/self.len)*100, self.cur, self.len))
+	end
+	return prefix..data
 end
 
 function filestream_methods:send(data)
