@@ -914,40 +914,31 @@ end
 
 local filestream_methods = {}
 local filestream_mt = {__index=filestream_methods}
+local filestream_methods_verbose = {}
+local filestream_mt_verbose = {__index=filestream_methods_verbose}
 
 function filestream(file, verbose)
 	-- assume the passed object behaves like a file
 --	if io.type(file)~='file' then
 --		error("bad argument #1 to filestream (file expected, got "..(io.type(file) or type(file))..")", 2)
 --	end
-	local self = setmetatable({file=file, verbose=verbose}, filestream_mt)
-	if self.verbose then
+	local self
+	if verbose then
+		self = setmetatable({file=file}, filestream_mt_verbose)
 		self.len = self:length()
 		self.cur = 0
 		io.write(string.format("read: %.2f%% (%d / %d)", 0, 0, self.len))
+	else
+		self = setmetatable({file=file}, filestream_mt)
 	end
 	return self
 end
 
-local smatch = string.match
 function filestream_methods:receive(pattern, prefix)
 	local prefix = prefix or ""
 	local file = self.file
-	local data,err
-	if smatch(pattern, "^%*a") then
-		data,err = file:read(pattern)
-	elseif smatch(pattern, "^%*l") then
-		data,err = file:read(pattern)
-	elseif type(pattern)=='number' then
-		data,err = file:read(pattern)
-	else
-		return nil,"unknown pattern"
-	end
+	local data,err = file:read(pattern)
 	if not data then return data,err end
-	if self.verbose then
-		self.cur = self.cur + #data
-		io.write(string.format("\rread: %.2f%% (%d / %d)", (self.cur/self.len)*100, self.cur, self.len))
-	end
 	return prefix..data
 end
 
@@ -960,5 +951,19 @@ function filestream_methods:length()
 	local len = self.file:seek('end')
 	self.file:seek('set', cur)
 	return len - cur
+end
+
+for k,v in pairs(filestream_methods) do
+	filestream_methods_verbose[k] = v
+end
+
+function filestream_methods_verbose:receive(pattern, prefix)
+	local prefix = prefix or ""
+	local file = self.file
+	local data,err = file:read(pattern)
+	if not data then return data,err end
+	self.cur = self.cur + #data
+	io.write(string.format("\rread: %.2f%% (%d / %d)", (self.cur/self.len)*100, self.cur, self.len))
+	return prefix..data
 end
 
