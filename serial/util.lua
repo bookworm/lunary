@@ -25,7 +25,7 @@ function enum(name2value)
 	return self
 end
 
-if optim then
+if optim and optim.bin2hex then
 	bin2hex = optim.bin2hex
 else
 	function bin2hex(bin)
@@ -152,14 +152,14 @@ conversion.b2b32 = {
 	["11111"] = "7",
 }
 
-function hex2base32(str)
+local function hex2base32(str)
 	assert(#str % 5 == 0, "hex string must have a size multiple of 5")
 	str = str:gsub(".", conversion.b16b2)
 	str = str:gsub(".....", conversion.b2b32)
 	return str
 end
 
-function base322hex(str)
+local function base322hex(str)
 	assert(#str % 4 == 0, "hex string must have a size multiple of 4")
 	str = str:gsub(".", conversion.b32b2)
 	str = str:gsub("....", conversion.b2b16)
@@ -170,8 +170,12 @@ function base322bin(value)
 	return hex2bin(base322hex(value))
 end
 
-function bin2base32(value)
-	return hex2base32(bin2hex(value))
+if optim and optim.bin2base32 then
+	bin2base32 = optim.bin2base32
+else
+	function bin2base32(value)
+		return hex2base32(bin2hex(value))
+	end
 end
 
 --[=[
