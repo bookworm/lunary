@@ -931,6 +931,10 @@ function filestream_methods:length()
 	return len - cur
 end
 
+function filestream_methods:skip(nbytes)
+	self.file:seek('cur', nbytes)
+end
+
 for k,v in pairs(filestream_methods) do
 	filestream_methods_verbose[k] = v
 end
@@ -943,5 +947,11 @@ function filestream_methods_verbose:receive(pattern, prefix)
 	self.cur = self.cur + #data
 	io.write(string.format("\rread: %.2f%% (%d / %d)", (self.cur/self.len)*100, self.cur, self.len))
 	return prefix..data
+end
+
+function filestream_methods_verbose:skip(nbytes)
+	self.file:seek('cur', nbytes)
+	self.cur = self.cur + nbytes
+	io.write(string.format("\rread: %.2f%% (%d / %d)", (self.cur/self.len)*100, self.cur, self.len))
 end
 
