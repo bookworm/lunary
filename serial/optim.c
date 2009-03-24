@@ -10,6 +10,15 @@ static char hexchars[] = {
 };
 static byte hexchar2bin(lua_State* L, const char hex)
 {
+	if (hex>='0' && hex<='9')
+		return hex-'0';
+	else if (hex>='A' && hex<='F')
+		return hex-'A'+10;
+	else if (hex>='a' && hex<='z')
+		return hex-'a'+10;
+	else
+		return luaL_argerror(L, 1, "invalid hex character");
+/*
 	switch (hex)
 	{
 		case '0': return 0x0;
@@ -31,6 +40,7 @@ static byte hexchar2bin(lua_State* L, const char hex)
 		default:
 			return luaL_argerror(L, 1, "invalid hexadecimal character");
 	}
+*/
 }
 
 static int bin2hex(lua_State* L)
@@ -70,10 +80,10 @@ static int hex2bin(lua_State* L)
 		bin = (byte*)lua_newuserdata(L, size/2);
 	for (i=0; i<size/2; ++i)
 	{
-		char a, b;
-		a = hex[i*2+0];
-		a = hex[i*2+1];
-		bin[i*1+0] = hexchar2bin(L, a) << 4 | hexchar2bin(L, b);
+		byte a, b;
+		a = hexchar2bin(L, hex[i*2+0]);
+		b = hexchar2bin(L, hex[i*2+1]);
+		bin[i*1+0] = a << 4 | b;
 	}
 	lua_pushlstring(L, bin, size/2);
 	return 1;
@@ -85,15 +95,57 @@ static char base32chars[] = {
 	'Q', 'R', 'S', 'T', 'U', 'V', 'W', 'X',
 	'Y', 'Z', '2', '3', '4', '5', '6', '7',
 };
-#define b00001 0x01
-#define b00011 0x03
-#define b00111 0x07
-#define b01111 0x0f
-#define b11111 0x1f
-#define b11110 0x1e
-#define b11100 0x1c
-#define b11000 0x18
-#define b10000 0x10
+static byte base32char2bin(lua_State* L, const char base32)
+{
+	if (base32>='A' && base32<='Z')
+		return base32-'A';
+	else if (base32>='2' && base32<='7')
+		return base32-'2'+26;
+	else if (base32>='a' && base32<='z')
+		return base32-'a';
+	else
+		return luaL_argerror(L, 1, "invalid base32 character");
+/*
+	switch (base32)
+	{
+		case 'A': case 'a': return 0;
+		case 'B': case 'b': return 1;
+		case 'C': case 'c': return 2;
+		case 'D': case 'd': return 3;
+		case 'E': case 'e': return 4;
+		case 'F': case 'f': return 5;
+		case 'G': case 'g': return 6;
+		case 'H': case 'h': return 7;
+		case 'I': case 'i': return 8;
+		case 'J': case 'j': return 9;
+		case 'K': case 'k': return 10;
+		case 'L': case 'l': return 11;
+		case 'M': case 'm': return 12;
+		case 'N': case 'n': return 13;
+		case 'O': case 'o': return 14;
+		case 'P': case 'p': return 15;
+		case 'Q': case 'q': return 16;
+		case 'R': case 'r': return 17;
+		case 'S': case 's': return 18;
+		case 'T': case 't': return 19;
+		case 'U': case 'u': return 20;
+		case 'V': case 'v': return 21;
+		case 'W': case 'w': return 22;
+		case 'X': case 'x': return 23;
+		case 'Y': case 'y': return 24;
+		case 'Z': case 'z': return 25;
+		case '2': return 26;
+		case '3': return 27;
+		case '4': return 28;
+		case '5': return 29;
+		case '6': return 30;
+		case '7': return 31;
+		default:
+			return luaL_argerror(L, 1, "invalid base32 character");
+	}
+*/
+}
+
 static int bin2base32(lua_State* L)
 {
 	const byte* bin;
@@ -116,22 +168,59 @@ static int bin2base32(lua_State* L)
 		c = bin[i*5+2];
 		d = bin[i*5+3];
 		e = bin[i*5+4];
-		base32[i*8+0] = base32chars[(a>>3)&b11111];	                /* 5 bits from a */
-		base32[i*8+1] = base32chars[(a<<2)&b11100 | (b>>6)&b00011]; /* 3 bits from a and 2 bits from b */
-		base32[i*8+2] = base32chars[(b>>1)&b11111];                 /* 5 bits from b */
-		base32[i*8+3] = base32chars[(b<<4)&b10000 | (c>>4)&b01111]; /* 1 bit from b and 4 bits from c */
-		base32[i*8+4] = base32chars[(c<<1)&b11110 | (d>>7)&b00001]; /* 4 bits from c and 1 bit from d */
-		base32[i*8+5] = base32chars[(d>>2)&b11111];                 /* 5 bits from d */
-		base32[i*8+6] = base32chars[(d<<3)&b11000 | (e>>5)&b00111]; /* 2 bits from d and 3 bits from e */
-		base32[i*8+7] = base32chars[(e<<0)&b11111];                 /* 5 bits from e */
+		base32[i*8+0] = base32chars[( a >> 3 )&0x1f];	       /* 5 bits from a */
+		base32[i*8+1] = base32chars[( a << 2 | b >> 6 )&0x1f]; /* 3 bits from a and 2 bits from b */
+		base32[i*8+2] = base32chars[( b >> 1 )&0x1f];          /* 5 bits from b */
+		base32[i*8+3] = base32chars[( b << 4 | c >> 4 )&0x1f]; /* 1 bit from b and 4 bits from c */
+		base32[i*8+4] = base32chars[( c << 1 | d >> 7 )&0x1f]; /* 4 bits from c and 1 bit from d */
+		base32[i*8+5] = base32chars[( d >> 2 )&0x1f];          /* 5 bits from d */
+		base32[i*8+6] = base32chars[( d << 3 | e >> 5 )&0x1f]; /* 2 bits from d and 3 bits from e */
+		base32[i*8+7] = base32chars[( e << 0 )&0x1f];          /* 5 bits from e */
 	}
 	lua_pushlstring(L, base32, size*8/5);
 	return 1;
 }
 
+static int base322bin(lua_State* L)
+{
+	const char* base32;
+	size_t size, i;
+	char buffer[BUFFERSIZE];
+	byte* bin;
+	base32 = (const char*)luaL_checklstring(L, 1, &size);
+	/* 8 chars for 5 bytes */
+	if (size % 8 != 0)
+		return luaL_argerror(L, 1, "string length must be a multiple of 8");
+	if (size*5/8 <= BUFFERSIZE)
+		bin = buffer;
+	else
+		bin = (char*)lua_newuserdata(L, size*5/8);
+	for (i=0; i<size/8; ++i)
+	{
+		byte a, b, c, d, e, f, g, h;
+		a = base32char2bin(L, base32[i*8+0]);
+		b = base32char2bin(L, base32[i*8+1]);
+		c = base32char2bin(L, base32[i*8+2]);
+		d = base32char2bin(L, base32[i*8+3]);
+		e = base32char2bin(L, base32[i*8+4]);
+		f = base32char2bin(L, base32[i*8+5]);
+		g = base32char2bin(L, base32[i*8+6]);
+		h = base32char2bin(L, base32[i*8+7]);
+		bin[i*5+0] = (a << 3 | b >> 2) & 0xff;
+		bin[i*5+1] = (b << 6 | c << 1 | d >> 4) & 0xff;
+		bin[i*5+2] = (d << 4 | e >> 1) & 0xff;
+		bin[i*5+3] = (e << 7 | f << 2 | g >> 3) & 0xff;
+		bin[i*5+4] = (g << 5 | h >> 0) & 0xff;
+	}
+	lua_pushlstring(L, bin, size*5/8);
+	return 1;
+}
+
 static luaL_Reg functions[] = {
 	{"bin2hex", bin2hex},
+	{"hex2bin", hex2bin},
 	{"bin2base32", bin2base32},
+	{"base322bin", base322bin},
 	{0, 0},
 };
 

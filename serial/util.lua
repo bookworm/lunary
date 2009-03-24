@@ -170,8 +170,12 @@ local function base322hex(str)
 	return str
 end
 
-function base322bin(value)
-	return hex2bin(base322hex(value))
+if optim and optim.base322bin then
+	base322bin = optim.base322bin
+else
+	function base322bin(value)
+		return hex2bin(base322hex(value))
+	end
 end
 
 if optim and optim.bin2base32 then
