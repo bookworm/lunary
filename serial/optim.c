@@ -2,35 +2,12 @@
 #include <lauxlib.h>
 
 typedef unsigned char byte;
+#define BUFFERSIZE 256
 
-#define bin2hex_STATICSIZE 256
 static char hexchars[] = {
 	'0', '1', '2', '3', '4', '5', '6', '7',
 	'8', '9', 'A', 'B', 'C', 'D', 'E', 'F',
 };
-static int bin2hex(lua_State* L)
-{
-	const byte* bin;
-	size_t size, i;
-	char buffer[bin2hex_STATICSIZE];
-	char* hex;
-	bin = (const byte*)luaL_checklstring(L, 1, &size);
-	/* 1 bytes for 2 chars */
-	if (size*2 <= bin2hex_STATICSIZE)
-		hex = buffer;
-	else
-		hex = (char*)lua_newuserdata(L, size*2);
-	for (i=0; i<size; ++i)
-	{
-		byte a;
-		a = bin[i*1+0];
-		hex[i*2+0] = hexchars[(a>>4)&0xf];
-		hex[i*2+1] = hexchars[a&0xf];
-	}
-	lua_pushlstring(L, hex, size*2);
-	return 1;
-}
-
 static byte hexchar2bin(lua_State* L, const char hex)
 {
 	switch (hex)
@@ -56,16 +33,38 @@ static byte hexchar2bin(lua_State* L, const char hex)
 	}
 }
 
-#define hex2bin_STATICSIZE 256
+static int bin2hex(lua_State* L)
+{
+	const byte* bin;
+	size_t size, i;
+	char buffer[BUFFERSIZE];
+	char* hex;
+	bin = (const byte*)luaL_checklstring(L, 1, &size);
+	/* 1 bytes for 2 chars */
+	if (size*2 <= BUFFERSIZE)
+		hex = buffer;
+	else
+		hex = (char*)lua_newuserdata(L, size*2);
+	for (i=0; i<size; ++i)
+	{
+		byte a;
+		a = bin[i*1+0];
+		hex[i*2+0] = hexchars[(a>>4)&0xf];
+		hex[i*2+1] = hexchars[a&0xf];
+	}
+	lua_pushlstring(L, hex, size*2);
+	return 1;
+}
+
 static int hex2bin(lua_State* L)
 {
 	const char* hex;
 	size_t size, i;
-	byte buffer[hex2bin_STATICSIZE];
+	byte buffer[BUFFERSIZE];
 	byte* bin;
 	hex = (const char*)luaL_checklstring(L, 1, &size);
 	/* 1 bytes for 2 chars */
-	if (size/2 <= hex2bin_STATICSIZE)
+	if (size/2 <= BUFFERSIZE)
 		bin = buffer;
 	else
 		bin = (byte*)lua_newuserdata(L, size/2);
@@ -80,7 +79,6 @@ static int hex2bin(lua_State* L)
 	return 1;
 }
 
-#define bin2base32_STATICSIZE 256
 static char base32chars[] = {
 	'A', 'B', 'C', 'D', 'E', 'F', 'G', 'H',
 	'I', 'J', 'K', 'L', 'M', 'N', 'O', 'P',
@@ -100,13 +98,13 @@ static int bin2base32(lua_State* L)
 {
 	const byte* bin;
 	size_t size, i;
-	char buffer[bin2base32_STATICSIZE];
+	char buffer[BUFFERSIZE];
 	char* base32;
 	bin = (const byte*)luaL_checklstring(L, 1, &size);
 	/* 5 bytes for 8 chars */
 	if (size % 5 != 0)
 		return luaL_argerror(L, 1, "string length must be a multiple of 5");
-	if (size*8/5 <= bin2base32_STATICSIZE)
+	if (size*8/5 <= BUFFERSIZE)
 		base32 = buffer;
 	else
 		base32 = (char*)lua_newuserdata(L, size*8/5);
