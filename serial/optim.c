@@ -1,6 +1,8 @@
 #include <lua.h>
 #include <lauxlib.h>
 
+typedef unsigned char byte;
+
 #define bin2hex_STATICSIZE 256
 static char hexchars[] = {
 	'0', '1', '2', '3', '4', '5', '6', '7',
@@ -8,17 +10,16 @@ static char hexchars[] = {
 };
 static int bin2hex(lua_State* L)
 {
-	typedef unsigned char byte;
 	const byte* bin;
 	size_t size, i;
 	char buffer[bin2hex_STATICSIZE];
 	char* hex;
 	bin = (const byte*)luaL_checklstring(L, 1, &size);
 	/* 1 bytes for 2 chars */
-	if (size <= bin2hex_STATICSIZE/2)
+	if (size*2 <= bin2hex_STATICSIZE)
 		hex = buffer;
 	else
-		hex = (char*)lua_newuserdata(L, size * 2);
+		hex = (char*)lua_newuserdata(L, size*2);
 	for (i=0; i<size; ++i)
 	{
 		byte a;
@@ -27,6 +28,55 @@ static int bin2hex(lua_State* L)
 		hex[i*2+1] = hexchars[a&0xf];
 	}
 	lua_pushlstring(L, hex, size*2);
+	return 1;
+}
+
+static byte hexchar2bin(lua_State* L, const char hex)
+{
+	switch (hex)
+	{
+		case '0': return 0x0;
+		case '1': return 0x1;
+		case '2': return 0x2;
+		case '3': return 0x3;
+		case '4': return 0x4;
+		case '5': return 0x5;
+		case '6': return 0x6;
+		case '7': return 0x7;
+		case '8': return 0x8;
+		case '9': return 0x9;
+		case 'A': case 'a': return 0xa;
+		case 'B': case 'b': return 0xb;
+		case 'C': case 'c': return 0xc;
+		case 'D': case 'd': return 0xd;
+		case 'E': case 'e': return 0xe;
+		case 'F': case 'f': return 0xf;
+		default:
+			return luaL_argerror(L, 1, "invalid hexadecimal character");
+	}
+}
+
+#define hex2bin_STATICSIZE 256
+static int hex2bin(lua_State* L)
+{
+	const char* hex;
+	size_t size, i;
+	byte buffer[hex2bin_STATICSIZE];
+	byte* bin;
+	hex = (const char*)luaL_checklstring(L, 1, &size);
+	/* 1 bytes for 2 chars */
+	if (size/2 <= hex2bin_STATICSIZE)
+		bin = buffer;
+	else
+		bin = (byte*)lua_newuserdata(L, size/2);
+	for (i=0; i<size/2; ++i)
+	{
+		char a, b;
+		a = hex[i*2+0];
+		a = hex[i*2+1];
+		bin[i*1+0] = hexchar2bin(L, a) << 4 | hexchar2bin(L, b);
+	}
+	lua_pushlstring(L, bin, size/2);
 	return 1;
 }
 
@@ -48,7 +98,6 @@ static char base32chars[] = {
 #define b10000 0x10
 static int bin2base32(lua_State* L)
 {
-	typedef unsigned char byte;
 	const byte* bin;
 	size_t size, i;
 	char buffer[bin2base32_STATICSIZE];
@@ -57,10 +106,10 @@ static int bin2base32(lua_State* L)
 	/* 5 bytes for 8 chars */
 	if (size % 5 != 0)
 		return luaL_argerror(L, 1, "string length must be a multiple of 5");
-	if (size / 5 <= bin2base32_STATICSIZE / 8)
+	if (size*8/5 <= bin2base32_STATICSIZE)
 		base32 = buffer;
 	else
-		base32 = (char*)lua_newuserdata(L, size * 2);
+		base32 = (char*)lua_newuserdata(L, size*8/5);
 	for (i=0; i<size/5; ++i)
 	{
 		byte a, b, c, d, e;

@@ -38,12 +38,16 @@ else
 	end
 end
 
-function hex2bin(hex)
-	local bin = {}
-	for i=1,#hex/2 do
-		tinsert(bin, schar(tonumber("0X"..hex:sub(2*i-1, 2*i))))
+if optim and optim.hex2bin then
+	hex2bin = optim.hex2bin
+else
+	function hex2bin(hex)
+		local bin = {}
+		for i=1,#hex/2 do
+			tinsert(bin, schar(tonumber("0X"..hex:sub(2*i-1, 2*i))))
+		end
+		return tconcat(bin)
 	end
-	return tconcat(bin)
 end
 
 local conversion = {}
