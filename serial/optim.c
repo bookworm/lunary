@@ -85,7 +85,7 @@ static int hex2bin(lua_State* L)
 		b = hexchar2bin(L, hex[i*2+1]);
 		bin[i*1+0] = a << 4 | b;
 	}
-	lua_pushlstring(L, bin, size/2);
+	lua_pushlstring(L, (char*)bin, size/2);
 	return 1;
 }
 
@@ -185,7 +185,7 @@ static int base322bin(lua_State* L)
 {
 	const char* base32;
 	size_t size, i;
-	char buffer[BUFFERSIZE];
+	byte buffer[BUFFERSIZE];
 	byte* bin;
 	base32 = (const char*)luaL_checklstring(L, 1, &size);
 	/* 8 chars for 5 bytes */
@@ -194,7 +194,7 @@ static int base322bin(lua_State* L)
 	if (size*5/8 <= BUFFERSIZE)
 		bin = buffer;
 	else
-		bin = (char*)lua_newuserdata(L, size*5/8);
+		bin = (byte*)lua_newuserdata(L, size*5/8);
 	for (i=0; i<size/8; ++i)
 	{
 		byte a, b, c, d, e, f, g, h;
@@ -212,7 +212,7 @@ static int base322bin(lua_State* L)
 		bin[i*5+3] = (e << 7 | f << 2 | g >> 3) & 0xff;
 		bin[i*5+4] = (g << 5 | h >> 0) & 0xff;
 	}
-	lua_pushlstring(L, bin, size*5/8);
+	lua_pushlstring(L, (char*)bin, size*5/8);
 	return 1;
 }
 
