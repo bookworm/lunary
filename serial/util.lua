@@ -1,5 +1,7 @@
 module((...), package.seeall)
 
+local debug = false
+
 local optim
 do
 	local success
@@ -200,20 +202,23 @@ function wrap(name)
 	end
 end
 --]=]
-function wrap(name, f)
-	return f
---[=[
-	local ename = name:gsub("[^%w]", "_")
-	local chunk = assert(loadstring([[
-		local ]]..ename..[[ = ...
-		return function(...)
-			return select(1, ]]..ename..[[(...))
+if debug then
+	function wrap(name, f)
+		local ename = name:gsub("[^%w]", "_")
+		local chunk = assert(loadstring([[
+			local ]]..ename..[[ = ...
+			return function(...)
+				return select(1, ]]..ename..[[(...))
+			end
+		]], name.." wrapper"))
+		if name ~= ename then
+			chunk = loadstring(string.dump(chunk):gsub(ename, name))
 		end
-	]], name.." wrapper"))
-	if name ~= ename then
-		chunk = loadstring(string.dump(chunk):gsub(ename, name))
+		return chunk(f)
 	end
-	return chunk(f)
---]=]
+else
+	function wrap(name, f)
+		return f
+	end
 end
 
