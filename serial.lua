@@ -90,6 +90,9 @@ end
 ------------------------------------------------------------------------------
 
 function serialize.uint32(value, endianness, scrambler)
+	if type(value)~='number' then
+		error("bad argument #1 to serialize.uint32 (number expected, got "..type(value)..")", 2)
+	end
 	if value < 0 or value >= 2^32 or math.floor(value)~=value then
 		error("invalid value")
 	end
