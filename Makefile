@@ -14,9 +14,9 @@ install:
 	install -d $(INSTALL_LUA)
 	install -d $(INSTALL_LUA)/serial
 	install -d $(INSTALL_BIN)/serial
-	install -t $(INSTALL_LUA) *.lua
-	install -t $(INSTALL_LUA)/serial serial/*.lua
-	install -t $(INSTALL_BIN)/serial serial/*.so
+	install *.lua $(INSTALL_LUA)
+	install serial/*.lua $(INSTALL_LUA)/serial
+	install serial/*.so $(INSTALL_BIN)/serial
 
 serial/optim.so: CPPFLAGS+=-Dluaopen_module=luaopen_serial_optim
 
