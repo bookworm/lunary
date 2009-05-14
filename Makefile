@@ -16,13 +16,16 @@ build:serial/optim.$(DLLEXT)
 clean:
 	rm -f serial/optim.$(DLLEXT)
 
-.PHONY:install
-install:
+.PHONY:pureinstall
+pureinstall:
 	install -d $(INSTALL_LUA)
 	install -d $(INSTALL_LUA)/serial
 	install -d $(INSTALL_BIN)/serial
 	install *.lua $(INSTALL_LUA)
 	install serial/*.lua $(INSTALL_LUA)/serial
+
+.PHONY:install
+install:pureinstall
 	install serial/*.$(DLLEXT) $(INSTALL_BIN)/serial
 
 serial/optim.so: CPPFLAGS+=-Dluaopen_module=luaopen_serial_optim
