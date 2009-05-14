@@ -25,7 +25,7 @@ pureinstall:
 	install serial/*.lua $(INSTALL_LUA)/serial
 
 .PHONY:install
-install:pureinstall
+install:build pureinstall
 	install serial/*.$(DLLEXT) $(INSTALL_BIN)/serial
 
 serial/optim.so: CPPFLAGS+=-Dluaopen_module=luaopen_serial_optim
