@@ -22,32 +22,26 @@ end
 
 ------------------------------------------------------------------------------
 
-function serialize.uint8(value, scrambler)
+function serialize.uint8(value)
 	local a = value
 	if value < 0 or value >= 2^8 or math.floor(value)~=value then
 		error("invalid value")
 	end
 	local data = string.char(a)
-	if scrambler then
-		data = scrambler(data)
-	end
 	return data
 end
 
-function read.uint8(stream, scrambler)
+function read.uint8(stream)
 	local data,err = stream:receive(1)
 	if not data then
 		return nil,err
-	end
-	if scrambler then
-		data = scrambler(data)
 	end
 	return string.byte(data)
 end
 
 ------------------------------------------------------------------------------
 
-function serialize.uint16(value, endianness, scrambler)
+function serialize.uint16(value, endianness)
 	if value < 0 or value >= 2^16 or math.floor(value)~=value then
 		error("invalid value")
 	end
@@ -62,19 +56,13 @@ function serialize.uint16(value, endianness, scrambler)
 	else
 		error("unknown endianness")
 	end
-	if scrambler then
-		data = scrambler(data)
-	end
 	return data
 end
 
-function read.uint16(stream, endianness, scrambler)
+function read.uint16(stream, endianness)
 	local data,err = stream:receive(2)
 	if not data then
 		return nil,err
-	end
-	if scrambler then
-		data = scrambler(data)
 	end
 	local a,b
 	if endianness=='le' then
@@ -89,7 +77,7 @@ end
 
 ------------------------------------------------------------------------------
 
-function serialize.uint32(value, endianness, scrambler)
+function serialize.uint32(value, endianness)
 	if type(value)~='number' then
 		error("bad argument #1 to serialize.uint32 (number expected, got "..type(value)..")", 2)
 	end
@@ -111,19 +99,13 @@ function serialize.uint32(value, endianness, scrambler)
 	else
 		error("unknown endianness")
 	end
-	if scrambler then
-		data = scrambler(data)
-	end
 	return data
 end
 
-function read.uint32(stream, endianness, scrambler)
+function read.uint32(stream, endianness)
 	local data,err = stream:receive(4)
 	if not data then
 		return nil,err
-	end
-	if scrambler then
-		data = scrambler(data)
 	end
 	local a,b,c,d
 	if endianness=='le' then
@@ -176,7 +158,7 @@ do
 	maxbytes.uint64 = {ma,mb,mc,md,me,mf,mg,mh}
 end
 
-function serialize.uint64(value, endianness, scrambler)
+function serialize.uint64(value, endianness)
 	local data
 	local tvalue = type(value)
 	if tvalue=='number' then
@@ -218,19 +200,13 @@ function serialize.uint64(value, endianness, scrambler)
 	else
 		error("uint64 value must be a number or a string")
 	end
-	if scrambler then
-		data = scrambler(data)
-	end
 	return data
 end
 
-function read.uint64(stream, endianness, scrambler)
+function read.uint64(stream, endianness)
 	local data,err = stream:receive(8)
 	if not data then
 		return nil,err
-	end
-	if scrambler then
-		data = scrambler(data)
 	end
 	local a,b,c,d,e,f,g,h
 	if endianness=='le' then
