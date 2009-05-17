@@ -9,7 +9,7 @@ struct = {}
 fstruct = {}
 alias = {}
 
-function warning(message, level)
+local function warning(message, level)
 	if not level then
 		level = 1
 	end
