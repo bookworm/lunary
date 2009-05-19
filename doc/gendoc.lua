@@ -150,7 +150,7 @@ The `serial.serialize` and `serial.write` tables are a little redundant. It is p
 
 The Lunary framework was originally created to write a proxy for a binary network protocol. This is why Lunary serialization functions expect a stream object implementing the LuaSocket socket interface. However Lunary provides a way to wrap standard Lua file objects and have them behave as LuaSocket streams.
 
-Stream objects as used by Lunary should be Lua object (implemented with any indexable Lua type), which provide methods. The methods to implement depend on the serialization functions used, and on the data type that is serialized. For basic data types, the `serial.write` functions expect a `send` method, and the `serial.read` functions expect a `receive` methods, defined as:
+Stream objects as used by Lunary should be Lua objects (implemented with any indexable Lua type), which provide methods. The methods to implement depend on the serialization functions used, and on the data type that is serialized. For basic data types, the `serial.write` functions expect a `send` method, and the `serial.read` functions expect a `receive` methods, defined as:
 
     function stream:send(data)
     function stream:receive(pattern, [prefix])
@@ -160,7 +160,6 @@ where `data` is a Lua string containing the bytes to write to the stream, `patte
 One other methods used by some data types described below is `length`:
 
     function stream:length()
-    function stream:skip(nbytes)
 
 The `length` method returns the number of bytes available in the stream. For network sockets, this makes no sense, but that information is available for file and buffer streams. That method is used by some data types which serialized length cannot be infered from the type description or content. For example array running to the end of the file or file section need that method when reading a stream.
 
@@ -213,7 +212,17 @@ You can then read such strings with the `serial.read.string32` function, or even
         {'genre', 'string32'},
     }
 
-## %chapterid%.4 - Data type reference
+---
+
+## %chapterid%.4 - Function reference
+
+### serial.buffer (data)
+
+### serial.filestream (file)
+
+---
+
+## %chapterid%.5 - Data type reference
 
 ]]
 

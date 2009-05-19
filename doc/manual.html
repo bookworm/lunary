@@ -53,7 +53,7 @@ lang="en">
 
 <p>The Lunary framework was originally created to write a proxy for a binary network protocol. This is why Lunary serialization functions expect a stream object implementing the LuaSocket socket interface. However Lunary provides a way to wrap standard Lua file objects and have them behave as LuaSocket streams.</p>
 
-<p>Stream objects as used by Lunary should be Lua object (implemented with any indexable Lua type), which provide methods. The methods to implement depend on the serialization functions used, and on the data type that is serialized. For basic data types, the <code>serial.write</code> functions expect a <code>send</code> method, and the <code>serial.read</code> functions expect a <code>receive</code> methods, defined as:</p>
+<p>Stream objects as used by Lunary should be Lua objects (implemented with any indexable Lua type), which provide methods. The methods to implement depend on the serialization functions used, and on the data type that is serialized. For basic data types, the <code>serial.write</code> functions expect a <code>send</code> method, and the <code>serial.read</code> functions expect a <code>receive</code> methods, defined as:</p>
 
 <pre><code>function stream:send(data)
 function stream:receive(pattern, [prefix])
@@ -64,7 +64,6 @@ function stream:receive(pattern, [prefix])
 <p>One other methods used by some data types described below is <code>length</code>:</p>
 
 <pre><code>function stream:length()
-function stream:skip(nbytes)
 </code></pre>
 
 <p>The <code>length</code> method returns the number of bytes available in the stream. For network sockets, this makes no sense, but that information is available for file and buffer streams. That method is used by some data types which serialized length cannot be infered from the type description or content. For example array running to the end of the file or file section need that method when reading a stream.</p>
@@ -125,7 +124,17 @@ serial.read.struct(stream, attribute)
 }
 </code></pre>
 
-<h2>4.4 - Data type reference</h2>
+<hr/>
+
+<h2>4.4 - Function reference</h2>
+
+<h3>serial.buffer (data)</h3>
+
+<h3>serial.filestream (file)</h3>
+
+<hr/>
+
+<h2>4.5 - Data type reference</h2>
 
 
 	<div class="function">
@@ -239,7 +248,7 @@ serial.read.struct(stream, attribute)
 </div>
 
 <div class="chapter" id="footer">
-<small>Last update: 2009-05-19 02:29:46+0200</small>
+<small>Last update: 2009-05-19 02:44:26+0200</small>
 </div>
 
 </body>
