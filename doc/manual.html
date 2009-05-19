@@ -69,7 +69,7 @@ function stream:skip(nbytes)
 
 <p>The <code>length</code> method returns the number of bytes available in the stream. For network sockets, this makes no sense, but that information is available for file and buffer streams. That method is used by some data types which serialized length cannot be infered from the type description or content. For example array running to the end of the file or file section need that method when reading a stream.</p>
 
-<p>As you can guess from the stream API we just described, the Lunary library is not capable of reading or writing data types that are not a multiple of a byte. This is a limitation that has not been problematic so far, but if necessary this could be changed.</p>
+<p>As you can guess from the stream API we just described, the Lunary library is not capable of reading or writing data types that are not a multiple of a byte. As a consequence, since there is no way to read anything below 8 bits at once, bit order within a byte is never specified as a type parameter, as opposed to byte order within multibyte types.</p>
 
 <h2>4.3 - Compound data types</h2>
 
@@ -127,32 +127,119 @@ serial.read.struct(stream, attribute)
 
 <h2>4.4 - Data type reference</h2>
 
-<ul>
-    <li>uint8</li>
-    <li>uint16</li>
-    <li>uint32</li>
-    <li>uint64</li>
-    <li>enum</li>
-    <li>flags</li>
-    <li>sizedbuffer</li>
-    <li>array</li>
-    <li>sizedvalue</li>
-    <li>sizedarray</li>
-    <li>cstring</li>
-    <li>float</li>
-    <li>bytes</li>
-    <li>bytes2hex</li>
-    <li>bytes2base32</li>
-    <li>boolean8</li>
-    <li>struct</li>
-    <li>fstruct</li>
-</ul>
+
+	<div class="function">
+	<h3><a name="uint8"><code>uint8</code></a></h3>
 
 
+
+		</div>
+	<div class="function">
+	<h3><a name="uint16"><code>uint16 ( endianness )</code></a></h3>
+
+
+
+		</div>
+	<div class="function">
+	<h3><a name="uint32"><code>uint32 ( endianness )</code></a></h3>
+
+
+
+		</div>
+	<div class="function">
+	<h3><a name="uint64"><code>uint64 ( endianness )</code></a></h3>
+
+
+
+		</div>
+	<div class="function">
+	<h3><a name="enum"><code>enum ( dictionary )</code></a></h3>
+
+
+
+		</div>
+	<div class="function">
+	<h3><a name="flags"><code>flags ( dictionary )</code></a></h3>
+
+
+
+		</div>
+	<div class="function">
+	<h3><a name="sizedbuffer"><code>sizedbuffer ( { size_t }, value_t ... )</code></a></h3>
+
+
+
+		</div>
+	<div class="function">
+	<h3><a name="array"><code>array ( size, value_t ... )</code></a></h3>
+
+
+
+		</div>
+	<div class="function">
+	<h3><a name="sizedvalue"><code>sizedvalue ( { size_t }, { value_t } )</code></a></h3>
+
+
+
+		</div>
+	<div class="function">
+	<h3><a name="sizedarray"><code>sizedarray ( { size_t }, { value_t } )</code></a></h3>
+
+
+
+		</div>
+	<div class="function">
+	<h3><a name="cstring"><code>cstring</code></a></h3>
+
+
+
+		</div>
+	<div class="function">
+	<h3><a name="float"><code>float</code></a></h3>
+
+
+
+		</div>
+	<div class="function">
+	<h3><a name="bytes"><code>bytes ( count )</code></a></h3>
+
+
+
+		</div>
+	<div class="function">
+	<h3><a name="bytes2hex"><code>bytes2hex ( count )</code></a></h3>
+
+
+
+		</div>
+	<div class="function">
+	<h3><a name="bytes2base32"><code>bytes2base32 ( count )</code></a></h3>
+
+
+
+		</div>
+	<div class="function">
+	<h3><a name="boolean8"><code>boolean8</code></a></h3>
+
+
+
+		</div>
+	<div class="function">
+	<h3><a name="struct"><code>struct ( fields )</code></a></h3>
+
+
+
+		</div>
+	<div class="function">
+	<h3><a name="fstruct"><code>fstruct ( f, ... )</code></a></h3>
+
+
+
+		</div>
 </div>
 
 <div class="chapter" id="footer">
-<small>Last update: 2009-05-18 02:52:53+0200</small>
+<small>Last update: 2009-05-19 02:29:46+0200</small>
 </div>
 
 </body>

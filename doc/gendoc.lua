@@ -124,7 +124,7 @@ io.output(file_manual)
 
 header()
 
-chapter('<a name="manual">Manual</a>', [[
+local manual = [[
 
 ## %chapterid%.1 - General library description
 
@@ -164,7 +164,7 @@ One other methods used by some data types described below is `length`:
 
 The `length` method returns the number of bytes available in the stream. For network sockets, this makes no sense, but that information is available for file and buffer streams. That method is used by some data types which serialized length cannot be infered from the type description or content. For example array running to the end of the file or file section need that method when reading a stream.
 
-As you can guess from the stream API we just described, the Lunary library is not capable of reading or writing data types that are not a multiple of a byte. This is a limitation that has not been problematic so far, but if necessary this could be changed.
+As you can guess from the stream API we just described, the Lunary library is not capable of reading or writing data types that are not a multiple of a byte. As a consequence, since there is no way to read anything below 8 bits at once, bit order within a byte is never specified as a type parameter, as opposed to byte order within multibyte types.
 
 ## %chapterid%.3 - Compound data types
 
@@ -215,26 +215,99 @@ You can then read such strings with the `serial.read.string32` function, or even
 
 ## %chapterid%.4 - Data type reference
 
-- uint8
-- uint16
-- uint32
-- uint64
-- enum
-- flags
-- sizedbuffer
-- array
-- sizedvalue
-- sizedarray
-- cstring
-- float
-- bytes
-- bytes2hex
-- bytes2base32
-- boolean8
-- struct
-- fstruct
+]]
 
-]])
+
+local types = { {
+	name = 'uint8',
+	params = {},
+	doc = [[]],
+}, {
+	name = 'uint16',
+	params = {'endianness'},
+	doc = [[]],
+}, {
+	name = 'uint32',
+	params = {'endianness'},
+	doc = [[]],
+}, {
+	name = 'uint64',
+	params = {'endianness'},
+	doc = [[]],
+}, {
+	name = 'enum',
+	params = {'dictionary'},
+	doc = [[]],
+}, {
+	name = 'flags',
+	params = {'dictionary'},
+	doc = [[]],
+}, {
+	name = 'sizedbuffer',
+	params = {'{ size_t }', 'value_t ...'},
+	doc = [[]],
+}, {
+	name = 'array',
+	params = {'size', 'value_t ...'},
+	doc = [[]],
+}, {
+	name = 'sizedvalue',
+	params = {'{ size_t }', '{ value_t }'},
+	doc = [[]],
+}, {
+	name = 'sizedarray',
+	params = {'{ size_t }', '{ value_t }'},
+	doc = [[]],
+}, {
+	name = 'cstring',
+	params = {},
+	doc = [[]],
+}, {
+	name = 'float',
+	params = {},
+	doc = [[]],
+}, {
+	name = 'bytes',
+	params = {'count'},
+	doc = [[]],
+}, {
+	name = 'bytes2hex',
+	params = {'count'},
+	doc = [[]],
+}, {
+	name = 'bytes2base32',
+	params = {'count'},
+	doc = [[]],
+}, {
+	name = 'boolean8',
+	params = {},
+	doc = [[]],
+}, {
+	name = 'struct',
+	params = {'fields'},
+	doc = [[]],
+}, {
+	name = 'fstruct',
+	params = {'f', '...'},
+	doc = [[]],
+} }
+
+manual = markdown(manual)
+for itype,type in ipairs(types) do
+	local pstr = table.concat(type.params, ", ")
+	if pstr~="" then
+		pstr = " ( "..pstr.." )"
+	end
+	manual = manual..[[
+	<div class="function">
+	<h3><a name="]]..type.name..[["><code>]]..type.name..pstr..[[</code></a></h3>
+]]..markdown(type.doc)..[[
+
+		</div>
+]]
+end
+
+chapter('<a name="manual">Manual</a>', manual, nil, true)
 
 footer()
 
