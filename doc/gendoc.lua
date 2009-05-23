@@ -134,7 +134,7 @@ The Lunary framework is organized as a collection of data type descriptions. Bas
 
     function serial.read.<type name>(<stream>, [type parameters])
 
-For a description of the stream object, see the *Streams* section below. The type parameters are dependent on the data type, and may be used to reduce the overall number of data types and group similar types. A data type can have any number of type parameters. For example, Lunary provides a single `uint32` datatype, but support both big-endian and little-endian integers. The endianness is specified as the first type parameter.
+For a description of the stream object, see the *Streams* section below. The type parameters are dependent on the data type, and may be used to reduce the overall number of data types and group similar types. A data type can have any number of type parameters. For example, Lunary provides a single `uint32` data type, but support both big-endian and little-endian integers. The endianness is specified as the first type parameter.
 
 `serial.serialize` functions that can be used to serialize a data object into a byte string. The general function prototype is:
 
@@ -200,7 +200,9 @@ This will automatically generate `read`, `serialize` and `write` functions for t
 
     serial.read.attribute(stream)
 
-The `fstruct` works similarly for fstructs (see below). The `alias` table, will contain type description arrays as expected by the `array` or `sizedarray` data types, and described above. For example, if your datatype often contains 32-byte long character strings, you can define an alias as follows:
+The `fstruct` works similarly for fstructs (see below).
+
+Finally the `alias` table will contain type description arrays as expected by the `array` or `sizedarray` data types, and described above. For example, if your data type often contains 32-byte long character strings, you can define an alias as follows:
 
     serial.alias.string32 = {'bytes', 32}
 
