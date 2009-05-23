@@ -45,7 +45,7 @@ end
 function footer()
 	print([[
 <div class="chapter" id="footer">
-<small>Last update: ]]..os.date"%Y-%m-%d %T%z"..[[</small>
+<small>Last update: ]]..os.date"%Y-%m-%d %H:%M:%S %Z"..[[</small>
 </div>
 ]])
 	print[[
