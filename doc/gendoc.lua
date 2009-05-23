@@ -232,19 +232,31 @@ You can then read such strings with the `serial.read.string32` function, or even
 local types = { {
 	name = 'uint8',
 	params = {},
-	doc = [[]],
+	doc = [[
+An 8-bit unsigned integer.
+
+In Lua it is stored as a regular `number`. When serializing, overflows and loss or precisions are ignored.]],
 }, {
 	name = 'uint16',
 	params = {'endianness'},
-	doc = [[]],
+	doc = [[
+A 16-bit unsigned integer. The `endianness` type parameters specifies the order of bytes in the stream. It is a string which can be either `'le'` for little-endian (least significant byte comes first), or `'be'` for big-endian (most significant byte comes first).
+
+In Lua it is stored as a regular `number`. When serializing, overflows and loss or precisions are ignored.]],
 }, {
 	name = 'uint32',
 	params = {'endianness'},
-	doc = [[]],
+	doc = [[
+A 32-bit unsigned integer. The `endianness` type parameters specifies the order of bytes in the stream. It is a string which can be either `'le'` for little-endian (least significant byte comes first), or `'be'` for big-endian (most significant byte comes first).
+
+In Lua it is stored as a regular `number`. When serializing, overflows and loss or precisions are ignored.]],
 }, {
 	name = 'uint64',
 	params = {'endianness'},
-	doc = [[]],
+	doc = [[
+A 64-bit unsigned integer. The `endianness` type parameters specifies the order of bytes in the stream. It is a string which can be either `'le'` for little-endian (least significant byte comes first), or `'be'` for big-endian (most significant byte comes first).
+
+In Lua it is stored as a regular `number`. When serializing, overflows and loss or precisions are ignored. When reading however, if the interger overflows the capacity of a Lua `number`, it is returned as a 8-byte string. Therefore `serialize` and `write` functions accept a string as input. When the `uint64` is a `string` on the Lua side it is always in little-endian order (ie. the string is reversed before writing or after reading if `endianness` is `'be'`).]],
 }, {
 	name = 'enum',
 	params = {'dictionary'},
