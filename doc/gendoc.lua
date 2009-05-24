@@ -259,27 +259,37 @@ A 64-bit unsigned integer. The `endianness` type parameters specifies the order 
 In Lua it is stored as a regular `number`. When serializing, overflows and loss or precisions are ignored. When reading however, if the interger overflows the capacity of a Lua `number`, it is returned as a 8-byte string. Therefore `serialize` and `write` functions accept a string as input. When the `uint64` is a `string` on the Lua side it is always in little-endian order (ie. the string is reversed before writing or after reading if `endianness` is `'be'`).]],
 }, {
 	name = 'enum',
-	params = {'dictionary'},
-	doc = [[]],
+	params = {'dictionary', 'int_t'},
+	doc = [[
+The `enum` data type is similar to the C enum types. Its first type parameter, `dictionnary`, is a mapping between names and data (typically number values). It should be a Lua indexable type, like a `table`, with two key-value pairs for each mapping, one with the name as a key and the data as value, and one with the data as key and the name as value. This implies that a name has a single associated data and a given data has a single name.
+
+The Lua side manipulates the name, and when serialized its associated data is stored in the stream. The `enum` data type is transparent, and can accept any Lua type as either name or data. A typical scenario will have `string` names and integer `number` data.
+
+Since the names are only used as key or values of the `dicionnary`, they can be any Lua value except `nil`. However, the data associated to the name must be serializable. For that reason, the second type parameter of `enum`, `int_t`, is a type description of the data. It is used to serialize the data into streams. A data can therefore be any Lua type except `nil`, provided a suitable type description for serialization.]],
 }, {
 	name = 'flags',
-	params = {'dictionary'},
-	doc = [[]],
+	params = {'dictionary', 'int_t'},
+	doc = [[
+The `flags` data type is similar to the `enum` type, with several differences though. This data type represents the combination of several names. Instead of a single name `string`, the Lua side will manipulate a set of names, represented by a `table` with names as keys, and `true` as the associated value. On the stream side however all the data associated with the names of the set are combined. To do so, the data must be integers, and they will be combined with the help of the [BitOp library](http://bitop.luajit.org/). For that reason, the `int_t` type description has to serialize Lua numbers.
+
+When serializing, the Lua numbers associated with each name of the set are combined with the bit.bor function, to produce a single number, which will then be serialized according to the `int_t` type description.
+
+When reading, a single number is read according to `int_t`. Then, the data of each pair of the dictionnary is tested against the number with the bit.band function, and if the result is non-zero the name if the pair is insterted in the output set. For that reason, the dictionnary is a little different than in the `enum` data type case. First, it must be enumerable using the standard `pairs` Lua functions. It should thus be a Lua table, unless the `pairs` global is overriden. Second, only one direction of mapping is necessary, ie. the pairs with the name as key and the data as value. This also means that several names can have the same values. If that is the case, all the matching names will be present in the output set.]],
 }, {
 	name = 'sizedbuffer',
-	params = {'{ size_t }', 'value_t ...'},
+	params = {'size_t', 'value_t'},
 	doc = [[]],
 }, {
 	name = 'array',
-	params = {'size', 'value_t ...'},
+	params = {'size', 'value_t'},
 	doc = [[]],
 }, {
 	name = 'sizedvalue',
-	params = {'{ size_t }', '{ value_t }'},
+	params = {'size_t', 'value_t'},
 	doc = [[]],
 }, {
 	name = 'sizedarray',
-	params = {'{ size_t }', '{ value_t }'},
+	params = {'size_t', 'value_t'},
 	doc = [[]],
 }, {
 	name = 'cstring',
