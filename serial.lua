@@ -232,6 +232,9 @@ end
 ------------------------------------------------------------------------------
 
 function serialize.enum(value, enum, int_t, ...)
+	if type(int_t)~='table' or select('#', ...)>=1 then
+		int_t = {int_t, ...}
+	end
 	local ivalue
 	if type(value)=='number' then
 		ivalue = value
@@ -239,15 +242,18 @@ function serialize.enum(value, enum, int_t, ...)
 		ivalue = enum[value]
 	end
 	assert(ivalue, "unknown enum string '"..tostring(value).."'")
-	local serialize = assert(serialize[int_t], "unknown integer type "..tostring(int_t).."")
-	local sdata,err = serialize(ivalue, ...)
+	local serialize = assert(serialize[int_t[1]], "unknown integer type "..tostring(int_t[1]).."")
+	local sdata,err = serialize(ivalue, unpack(int_t, 2))
 	if not sdata then return nil,err end
 	return sdata
 end
 
 function read.enum(stream, enum, int_t, ...)
-	local read = assert(read[int_t], "unknown integer type "..tostring(int_t).."")
-	local value,err = read(stream, ...)
+	if type(int_t)~='table' or select('#', ...)>=1 then
+		int_t = {int_t, ...}
+	end
+	local read = assert(read[int_t[1]], "unknown integer type "..tostring(int_t[1]).."")
+	local value,err = read(stream, unpack(int_t, 2))
 	if not value then
 		return nil,err
 	end
@@ -261,47 +267,64 @@ end
 
 ------------------------------------------------------------------------------
 
+local success,libbit = pcall(require, 'bit')
+if success then
+
 function serialize.flags(value, flagset, int_t, ...)
-	local int = 0
+	if type(int_t)~='table' or select('#', ...)>=1 then
+		int_t = {int_t, ...}
+	end
+	local ints = {}
 	for flag,k in pairs(value) do
 		assert(k==true, "flag has value other than true ("..tostring(k)..")")
-		int = int + flagset[flag]
+		ints[#ints+1] = flagset[flag]
 	end
-	value = int
-	local serialize = assert(serialize[int_t], "unknown integer type "..tostring(int_t).."")
-	local sdata,err = serialize(value, ...)
+	value = libbit.bor(unpack(ints))
+	local serialize = assert(serialize[int_t[1]], "unknown integer type "..tostring(int_t[1]).."")
+	local sdata,err = serialize(value, unpack(int_t, 2))
 	if not sdata then return nil,err end
 	return sdata
 end
 
 function read.flags(stream, flagset, int_t, ...)
-	local read = assert(read[int_t], "unknown integer type "..tostring(int_t).."")
-	local int,err = read(stream, ...)
+	if type(int_t)~='table' or select('#', ...)>=1 then
+		int_t = {int_t, ...}
+	end
+	local read = assert(read[int_t[1]], "unknown integer type "..tostring(int_t[1]).."")
+	local int,err = read(stream, unpack(int_t, 2))
 	if not int then
 		return nil,err
 	end
 	local value = {}
 	for k,v in pairs(flagset) do
-		if bit.band(int, v) ~= 0 then
+		if libbit.band(int, v) ~= 0 then
 			value[k] = true
 		end
 	end
 	return value
 end
 
+end
+
 ------------------------------------------------------------------------------
 
 function serialize.sizedbuffer(value, size_t, ...)
-	local serialize = assert(serialize[size_t], "unknown size type "..tostring(size_t).."")
+	if type(size_t)~='table' or select('#', ...)>=1 then
+		size_t = {size_t, ...}
+	end
+	local serialize = assert(serialize[size_t[1]], "unknown size type "..tostring(size_t[1]).."")
 	local size = #value
-	local ssize,err = serialize(size, ...)
+	local ssize,err = serialize(size, unpack(size_t, 2))
 	if not ssize then return nil,err end
 	return ssize .. value
 end
 
 function read.sizedbuffer(stream, size_t, ...)
-	local read = assert(read[size_t], "unknown size type "..tostring(size_t).."")
-	local size,err = read(stream, ...)
+	if type(size_t)~='table' or select('#', ...)>=1 then
+		size_t = {size_t, ...}
+	end
+	local read = assert(read[size_t[1]], "unknown size type "..tostring(size_t[1]).."")
+	local size,err = read(stream, unpack(size_t, 2))
 	if not size then return nil,err end
 	if stream.length then
 		assert(stream:length() >= size, "invalid sizedbuffer size, stream is too short")
@@ -314,14 +337,17 @@ end
 ------------------------------------------------------------------------------
 
 function serialize.array(value, size, value_t, ...)
-	local serialize = assert(serialize[value_t], "unknown value type "..tostring(value_t).."")
+	if type(value_t)~='table' or select('#', ...)>=1 then
+		value_t = {value_t, ...}
+	end
+	local serialize = assert(serialize[value_t[1]], "unknown value type "..tostring(value_t[1]).."")
 	if size=='*' then
 		size = #value
 	end
 	assert(size == #value, "provided array size doesn't match")
 	local data,temp,err = ""
 	for i=1,size do
-		temp,err = serialize(value[i], ...)
+		temp,err = serialize(value[i], unpack(value_t, 2))
 		if not temp then return nil,err end
 		data = data .. temp
 	end
@@ -329,31 +355,37 @@ function serialize.array(value, size, value_t, ...)
 end
 
 function write.array(stream, value, size, value_t, ...)
-	local write = assert(write[value_t], "unknown value type "..tostring(value_t).."")
+	if type(value_t)~='table' or select('#', ...)>=1 then
+		value_t = {value_t, ...}
+	end
+	local write = assert(write[value_t[1]], "unknown value type "..tostring(value_t[1]).."")
 	if size=='*' then
 		size = #value
 	end
 	assert(size == #value, "provided array size doesn't match")
 	for i=1,size do
-		local success,err = write(stream, value[i], ...)
+		local success,err = write(stream, value[i], unpack(value_t, 2))
 		if not success then return nil,err end
 	end
 	return true
 end
 
 function read.array(stream, size, value_t, ...)
-	local read = assert(read[value_t], "unknown value type "..tostring(value_t).."")
+	if type(value_t)~='table' or select('#', ...)>=1 then
+		value_t = {value_t, ...}
+	end
+	local read = assert(read[value_t[1]], "unknown value type "..tostring(value_t[1]).."")
 	local value = {}
 	if size=='*' then
 		assert(stream.length, "infinite arrays can only be read from buffers, not infinite streams")
 		while stream:length() > 0 do
-			local elem,err = read(stream, ...)
+			local elem,err = read(stream, unpack(value_t, 2))
 			if not elem then return nil,err end
 			value[#value+1] = elem
 		end
 	else
 		for i=1,size do
-			local elem,err = read(stream, ...)
+			local elem,err = read(stream, unpack(value_t, 2))
 			if not elem then return nil,err end
 			value[i] = elem
 		end
@@ -363,7 +395,10 @@ end
 
 ------------------------------------------------------------------------------
 
-function serialize.sizedvalue(value, size_t, value_t)
+function serialize.sizedvalue(value, size_t, value_t, ...)
+	if type(value_t)~='table' or select('#', ...)>=1 then
+		value_t = {value_t, ...}
+	end
 	assert(type(size_t)=='table', "size type definition should be an array")
 	assert(size_t[1], "size type definition array is empty")
 	assert(type(value_t)=='table', "value type definition should be an array")
@@ -384,7 +419,10 @@ function serialize.sizedvalue(value, size_t, value_t)
 	return ssize .. svalue
 end
 
-function read.sizedvalue(stream, size_t, value_t)
+function read.sizedvalue(stream, size_t, value_t, ...)
+	if type(value_t)~='table' or select('#', ...)>=1 then
+		value_t = {value_t, ...}
+	end
 	assert(type(size_t)=='table', "size type definition should be an array")
 	assert(size_t[1], "size type definition array is empty")
 	assert(type(value_t)=='table', "value type definition should be an array")
@@ -418,7 +456,10 @@ end
 
 ------------------------------------------------------------------------------
 
-function serialize.sizedarray(value, size_t, value_t)
+function serialize.sizedarray(value, size_t, value_t, ...)
+	if type(value_t)~='table' or select('#', ...)>=1 then
+		value_t = {value_t, ...}
+	end
 	assert(type(size_t)=='table', "size type definition should be an array")
 	assert(size_t[1], "size type definition array is empty")
 	assert(type(value_t)=='table', "value type definition should be an array")
@@ -439,7 +480,10 @@ function serialize.sizedarray(value, size_t, value_t)
 	return data
 end
 
-function write.sizedarray(stream, value, size_t, value_t)
+function write.sizedarray(stream, value, size_t, value_t, ...)
+	if type(value_t)~='table' or select('#', ...)>=1 then
+		value_t = {value_t, ...}
+	end
 	assert(type(size_t)=='table', "size type definition should be an array")
 	assert(size_t[1], "size type definition array is empty")
 	assert(type(value_t)=='table', "value type definition should be an array")
@@ -458,7 +502,10 @@ function write.sizedarray(stream, value, size_t, value_t)
 	return true
 end
 
-function read.sizedarray(stream, size_t, value_t)
+function read.sizedarray(stream, size_t, value_t, ...)
+	if type(value_t)~='table' or select('#', ...)>=1 then
+		value_t = {value_t, ...}
+	end
 	assert(type(size_t)=='table', "size type definition should be an array")
 	assert(size_t[1], "size type definition array is empty")
 	assert(type(value_t)=='table', "value type definition should be an array")
@@ -493,8 +540,10 @@ end
 
 ------------------------------------------------------------------------------
 
+local success,libstruct = pcall(require, 'struct')
+if success then
+
 function serialize.float(value)
-	local libstruct = require 'struct'
 	return libstruct.pack("f", value)
 end
 
@@ -503,8 +552,9 @@ function read.float(stream)
 	if not data then
 		return nil,err
 	end
-	local libstruct = require 'struct'
 	return libstruct.unpack("f", data)
+end
+
 end
 
 ------------------------------------------------------------------------------
