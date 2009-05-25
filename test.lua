@@ -78,6 +78,9 @@ assert(serial.serialize.cstring(buffer_string)==buffer_string..'\0')
 if pcall(require, 'struct') then
 
 assert(serial.serialize.float(42.37, 'le')==string.char(0xe1, 0x7a, 0x29, 0x42))
+assert(serial.serialize.float(42.37, 'be')==string.char(0x42, 0x29, 0x7a, 0xe1))
+assert(serial.serialize.double(42.37, 'le')==string.char(0x8F, 0xC2, 0xF5, 0x28, 0x5C, 0x2F, 0x45, 0x40))
+assert(serial.serialize.double(42.37, 'be')==string.char(0x40, 0x45, 0x2F, 0x5C, 0x28, 0xF5, 0xC2, 0x8F))
 
 end
 

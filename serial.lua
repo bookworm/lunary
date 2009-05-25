@@ -575,6 +575,40 @@ function read.float(stream, endianness)
 	return libstruct.unpack(format, data)
 end
 
+------------------------------------------------------------------------------
+
+function serialize.double(value, endianness)
+	local format
+	if endianness=='le' then
+		format = "<d"
+	elseif endianness=='be' then
+		format = ">d"
+	else
+		error("unknown endianness")
+	end
+	local data = libstruct.pack(format, value)
+	if #data ~= 8 then
+		error("struct library \"f\" format doesn't correspond to a 64 bits float")
+	end
+	return data
+end
+
+function read.double(stream, endianness)
+	local format
+	if endianness=='le' then
+		format = "<d"
+	elseif endianness=='be' then
+		format = ">d"
+	else
+		error("unknown endianness")
+	end
+	local data,err = stream:receive(4)
+	if not data then
+		return nil,err
+	end
+	return libstruct.unpack(format, data)
+end
+
 end
 
 ------------------------------------------------------------------------------
