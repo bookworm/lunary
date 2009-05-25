@@ -25,7 +25,9 @@ lang="en">
 <div class="chapter">
 <h1>1 - About Lunary</h1>
 
-<p>Lunary is a framework to read and write structured binary data to files or network connections. The aim is to provide an easy to use interface to describe any complex binary format, and allow translation to Lua data structures. The focus is placed upon the binary side of the transformation, and further processing may be necessary to obtain the desired Lua structures. On the other hand Lunary should allow reading and writing of any binary format, and bring all the information available to the Lua side. User application or custom formats are required to remove themselves any unnecessary information (e.g. ordering of entries in a set or a map).</p>
+<p>Lunary is a framework to read and write structured binary data to files or network connections. The aim is to provide an easy to use interface to describe any complex binary format, and allow translation to Lua data structures. The focus is placed upon the binary side of the transformation, and further processing may be necessary to obtain the desired Lua structures. On the other hand Lunary should allow reading and writing of any binary format, and bring all the information available to the Lua side.</p>
+
+<p>All built-in data types preserve all the information they read from the streams. This allows reserializing an object even if it's not manipulable by Lua (e.g. an <code>uint64</code> not fitting in a Lua <code>number</code> will be represented by a <code>string</code>, an <code>enum</code> which integer value is not named will be passed as a <code>number</code>). User application or custom formats are required to remove themselves any unnecessary information (invalid value, ordering of entries in a set or a map, etc.).</p>
 
 <h2>Support</h2>
 
@@ -38,6 +40,18 @@ lang="en">
 <p>This module is written and maintained by <a href="mailto:jerome.vuarand@gmail.com">Jérôme Vuarand</a>.</p>
 
 <p>Lunary is available under a <a href="LICENSE.txt">MIT-style license</a>.</p>
+
+<h2>To do</h2>
+
+<p>Here are some points that I'm going to improve in the near future:</p>
+
+<ul>
+    <li>add double precision floating point support</li>
+    <li>add signed integer support</li>
+    <li>better document errors thrown by the library</li>
+    <li>add a native endianness for types with endianness parameter, or a way to query the native endianness</li>
+</ul>
+
 
 </div>
 
@@ -56,22 +70,22 @@ lang="en">
 <div class="chapter">
 <h1>3 - <a name="installation">Installation</a></h1>
 
-<p>Lunary consists of two Lua modules named <code>serial</code> and <code>serial.util</code>. There is a also an optionnal <code>serial.optim</code> binary module which replace some functions of <code>serial.util</code> with optmized alternatives to improve Lunary performance.</p>
+<p>Lunary consists of two Lua modules named <code>serial</code> and <code>serial.util</code>. There is a also an optional <code>serial.optim</code> binary module which replace some functions of <code>serial.util</code> with optimized alternatives to improve Lunary performance.</p>
 
-<p>A simple makefile is provided. The <code>build</code> target builds the <code>serial.optim</code> binary module. The <code>install</code> target installs all the Lunary modules to the <code>PREFIX</code> installation path, which is defined in the Makefile and can be overriden with an environment variable. The <code>installpure</code> target only install pure Lua modules, it can be used on platforms where compiling or using C modules is problematic.</p>
+<p>A simple makefile is provided. The <code>build</code> target builds the <code>serial.optim</code> binary module. The <code>install</code> target installs all the Lunary modules to the <code>PREFIX</code> installation path, which is defined in the Makefile and can be overridden with an environment variable. The <code>installpure</code> target only install pure Lua modules, it can be used on platforms where compiling or using C modules is problematic.</p>
 
-<p>Finally note that Lunary has some optionnal dependencies. If the dependency is not available, the data types using them will not be available to Lunary users. Here are the data types with dependencies:</p>
+<p>Finally note that Lunary has some optional dependencies. If the dependency is not available, the data types using them will not be available to Lunary users. Here are the data types with dependencies:</p>
 
 <ul>
     <li>the <code>float</code> data type uses <a href="http://www.inf.puc-rio.br/~roberto/struct/">Roberto Ierusalimschy's struct library</a> to serialize native floating point numbers. The library is available at <a href="http://www.inf.puc-rio.br/~roberto/struct/">http://www.inf.puc-rio.br/~roberto/struct/</a>.</li>
     <li>the <code>flags</code> data type uses the <a href="http://bitop.luajit.org/">BitOp library</a> for bit-wise boolean operations. The library is available at <a href="http://bitop.luajit.org/">http://bitop.luajit.org/</a>.</li>
 </ul>
 
-<p>Note than many other libraries have similar functionnality. I wouldn't mind adding support for some of these, just ask.</p>
+<p>Note than many other libraries have similar functionality. I wouldn't mind adding support for some of these, just ask.</p>
 </div>
 
 <div class="chapter" id="footer">
-<small>Last update: 2009-05-25 17:35:57 CEST</small>
+<small>Last update: 2009-05-26 00:59:18 CEST</small>
 </div>
 
 </body>
