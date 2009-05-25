@@ -205,7 +205,7 @@ To build complex structs containing other structs, this may not be very handy. L
         {'value', 'uint32', 'le'},
     }
 
-This will automatically generate `read`, `serialize` and `write` functions for that type, which can be used as follow:
+This will automatically generate `read`, `serialize` and `write` functions for that type, which can be used as follows:
 
     serial.read.attribute(stream)
 
