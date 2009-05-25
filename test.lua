@@ -19,10 +19,20 @@ local struct_desc = {
 	{'value', 'uint32', 'le'},
 }
 
-local fstruct_closure = function(self)
+local fstruct_closure1 = function(value, declare_field)
+	declare_field('name', 'cstring')
+	declare_field('value', 'uint32', 'le')
+end
+
+local fstruct_closure2 = function(self)
 	self 'name' ('cstring')
 	self 'value' ('uint32', 'le')
 end
+
+local fstruct_object = {
+	name = "foo",
+	value = 42,
+}
 
 assert(serial.serialize.uint8(0x00)==string.char(0x00))
 assert(serial.serialize.uint8(0x55)==string.char(0x55))
@@ -85,9 +95,8 @@ assert(serial.serialize.struct({
 	value = 42,
 }, struct_desc)=="foo"..'\0'..string.char(42, 0, 0, 0))
 
-assert(serial.serialize.fstruct({
-	name = "foo",
-	value = 42,
-}, fstruct_closure)=="foo"..'\0'..string.char(42, 0, 0, 0))
+assert(serial.serialize.fstruct(fstruct_object, fstruct_closure1)=="foo"..'\0'..string.char(42, 0, 0, 0))
+
+assert(serial.serialize.fstruct(fstruct_object, fstruct_closure2)=="foo"..'\0'..string.char(42, 0, 0, 0))
 
 

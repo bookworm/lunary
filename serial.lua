@@ -694,18 +694,28 @@ function serialize.fstruct(object, f, ...)
 	local str = ""
 	local wrapper = setmetatable({}, {
 		__index = object,
-		__call = function(self, field)
-			return function(type, ...)
+		__newindex = object,
+		__call = function(self, field, ...)
+			if select('#', ...)>0 then
+				local type = ...
 				local serialize = serialize[type]
 				if not serialize then error("no function to serialize field of type "..tostring(type)) end
-				local temp,err = serialize(object[field], ...)
+				local temp,err = serialize(object[field], select(2, ...))
 				if not temp then cyield(nil, err) end
 				str = str .. temp
+			else
+				return function(type, ...)
+					local serialize = serialize[type]
+					if not serialize then error("no function to serialize field of type "..tostring(type)) end
+					local temp,err = serialize(object[field], ...)
+					if not temp then cyield(nil, err) end
+					str = str .. temp
+				end
 			end
 		end,
 	})
 	local coro = cwrap(function()
-		f(wrapper, unpack(params, 1, params.n))
+		f(wrapper, wrapper, unpack(params, 1, params.n))
 		return true
 	end)
 	local success,err = coro()
@@ -717,17 +727,26 @@ function write.fstruct(stream, object, f, ...)
 	local params = {n=select('#', ...), ...}
 	local wrapper = setmetatable({}, {
 		__index = object,
-		__call = function(self, field)
-			return function(type, ...)
+		__newindex = object,
+		__call = function(self, field, ...)
+			if select('#', ...)>0 then
+				local type = ...
 				local write = write[type]
 				if not write then error("no function to write field of type "..tostring(type)) end
-				local success,err = write(stream, object[field], ...)
+				local success,err = write(stream, object[field], select(2, ...))
 				if not success then cyield(nil, err) end
+			else
+				return function(type, ...)
+					local write = write[type]
+					if not write then error("no function to write field of type "..tostring(type)) end
+					local success,err = write(stream, object[field], ...)
+					if not success then cyield(nil, err) end
+				end
 			end
 		end,
 	})
 	local coro = cwrap(function()
-		f(wrapper, unpack(params, 1, params.n))
+		f(wrapper, wrapper, unpack(params, 1, params.n))
 		return true
 	end)
 	local success,err = coro()
@@ -741,18 +760,27 @@ function read.fstruct(stream, f, ...)
 	local wrapper = setmetatable({}, {
 		__index = object,
 		__newindex = object,
-		__call = function(self, field)
-			return --[[util.wrap("field "..field, ]]function(type, ...)
+		__call = function(self, field, ...)
+			if select('#', ...)>0 then
+				local type = ...
 				local read = read[type]
 				if not read then error("no function to read field of type "..tostring(type)) end
-				local value,err = read(stream, ...)
+				local value,err = read(stream, select(2, ...))
 				if value==nil then cyield(nil, err) end
 				object[field] = value
-			end--[[)]]
+			else
+				return --[[util.wrap("field "..field, ]]function(type, ...)
+					local read = read[type]
+					if not read then error("no function to read field of type "..tostring(type)) end
+					local value,err = read(stream, ...)
+					if value==nil then cyield(nil, err) end
+					object[field] = value
+				end--[[)]]
+			end
 		end,
 	})
 	local coro = cwrap(function()
-		f(wrapper, unpack(params, 1, params.n))
+		f(wrapper, wrapper, unpack(params, 1, params.n))
 		return true
 	end)
 	local success,err = coro()
