@@ -86,7 +86,9 @@ io.output(file_index)
 header()
 
 chapter("About Lunary", [[
-Lunary is a framework to read and write structured binary data to files or network connections. The aim is to provide an easy to use interface to describe any complex binary format, and allow translation to Lua data structures. The focus is placed upon the binary side of the transformation, and further processing may be necessary to obtain the desired Lua structures. On the other hand Lunary should allow reading and writing of any binary format, and bring all the information available to the Lua side. User application or custom formats are required to remove themselves any unnecessary information (e.g. ordering of entries in a set or a map).
+Lunary is a framework to read and write structured binary data to files or network connections. The aim is to provide an easy to use interface to describe any complex binary format, and allow translation to Lua data structures. The focus is placed upon the binary side of the transformation, and further processing may be necessary to obtain the desired Lua structures. On the other hand Lunary should allow reading and writing of any binary format, and bring all the information available to the Lua side.
+
+All built-in data types preserve all the information they read from the streams. This allows reserializing an object even if it's not manipulable by Lua (e.g. an `uint64` not fitting in a Lua `number` will be represented by a `string`, an `enum` which integer value is not named will be passed as a `number`). User application or custom formats are required to remove themselves any unnecessary information (invalid value, ordering of entries in a set or a map, etc.).
 
 ## Support
 
@@ -110,16 +112,16 @@ Tarballs of the latest code can be downloaded directly from there: as [gz](http:
 ]])
 
 chapter('<a name="installation">Installation</a>', [[
-Lunary consists of two Lua modules named `serial` and `serial.util`. There is a also an optionnal `serial.optim` binary module which replace some functions of `serial.util` with optmized alternatives to improve Lunary performance.
+Lunary consists of two Lua modules named `serial` and `serial.util`. There is a also an optional `serial.optim` binary module which replace some functions of `serial.util` with optimized alternatives to improve Lunary performance.
 
-A simple makefile is provided. The `build` target builds the `serial.optim` binary module. The `install` target installs all the Lunary modules to the `PREFIX` installation path, which is defined in the Makefile and can be overriden with an environment variable. The `installpure` target only install pure Lua modules, it can be used on platforms where compiling or using C modules is problematic.
+A simple makefile is provided. The `build` target builds the `serial.optim` binary module. The `install` target installs all the Lunary modules to the `PREFIX` installation path, which is defined in the Makefile and can be overridden with an environment variable. The `installpure` target only install pure Lua modules, it can be used on platforms where compiling or using C modules is problematic.
 
-Finally note that Lunary has some optionnal dependencies. If the dependency is not available, the data types using them will not be available to Lunary users. Here are the data types with dependencies:
+Finally note that Lunary has some optional dependencies. If the dependency is not available, the data types using them will not be available to Lunary users. Here are the data types with dependencies:
 
 - the `float` data type uses [Roberto Ierusalimschy's struct library](http://www.inf.puc-rio.br/~roberto/struct/) to serialize native floating point numbers. The library is available at [http://www.inf.puc-rio.br/~roberto/struct/](http://www.inf.puc-rio.br/~roberto/struct/).
 - the `flags` data type uses the [BitOp library](http://bitop.luajit.org/) for bit-wise boolean operations. The library is available at [http://bitop.luajit.org/](http://bitop.luajit.org/).
 
-Note than many other libraries have similar functionnality. I wouldn't mind adding support for some of these, just ask.]])
+Note than many other libraries have similar functionality. I wouldn't mind adding support for some of these, just ask.]])
 
 footer()
 
@@ -133,7 +135,7 @@ local manual = [[
 
 ## %chapterid%.1 - General library description
 
-The Lunary framework is organized as a collection of data type descriptions. Basic data types include for example 8-bit integers, C strings, enums. Each data type has a unique name, and can have parameters. Datatypes can be described by different means. Ultimately, each data type will be manipulated with three functions, named according to the data type, and located in the following tables: `serial.read`, `serial.serialize` and `serial.write`.
+The Lunary framework is organized as a collection of data type descriptions. Basic data types include for example 8-bit integers, C strings, enums. Each data type has a unique name, and can have parameters. Data types can be described by different means. Ultimately, each data type will be manipulated with three functions, named according to the data type, and located in the following tables: `serial.read`, `serial.serialize` and `serial.write`.
 
 `serial.read` contains functions that can be used to read a data object, of a given data type, from a data stream. For example the function `serial.read.uint8` can be used to read an unsigned 8 bit integer number. The general function prototype is:
 
@@ -166,9 +168,9 @@ One other methods used by some data types described below is `length`:
 
     function stream:length()
 
-The `length` method returns the number of bytes available in the stream. For network sockets, this makes no sense, but that information is available for file and buffer streams. That method is used by some data types which serialized length cannot be infered from the type description or content. For example array running to the end of the file or file section need that method when reading a stream.
+The `length` method returns the number of bytes available in the stream. For network sockets, this makes no sense, but that information is available for file and buffer streams. That method is used by some data types which serialized length cannot be inferred from the type description or content. For example array running to the end of the file or file section need that method when reading a stream.
 
-As you can guess from the stream API we just described, the Lunary library is not capable of reading or writing data types that are not a multiple of a byte. As a consequence, since there is no way to read anything below 8 bits at once, bit order within a byte is never specified as a type parameter, as opposed to byte order within multibyte types.
+As you can guess from the stream API we just described, the Lunary library is not capable of reading or writing data types that are not a multiple of a byte. As a consequence, since there is no way to read anything below 8 bits at once, bit order within a byte is never specified as a type parameter, as opposed to byte order within multi byte types.
 
 ## %chapterid%.3 - Compound data types
 
@@ -188,7 +190,7 @@ is equivalent to:
 
 ### %chapterid%.3.2 - Naming `struct`-based and `fstruct`-based data types, aliases
 
-The `struct` and `fstruct` (as described below) are very handy to describe complex compound types. However, when such types are reused in several part of more complex data types, or in several root data types (like in several file formats), it may be handy to refer to them with names. The basic way to do it is to store the type parameters in Lua variables. For example one can write:
+The `struct` and `fstruct` data types (as described below) are very handy to describe complex compound types. However, when such types are reused in several part of more complex data types, or in several root data types (like in several file formats), it may be handy to refer to them with names. The basic way to do it is to store the type parameters in Lua variables. For example one can write:
 
     local attribute = {
         {'name', 'cstring'},
@@ -207,7 +209,7 @@ This will automatically generate `read`, `serialize` and `write` functions for t
 
     serial.read.attribute(stream)
 
-The `fstruct` works similarly for fstructs (see below).
+The `fstruct` table works similarly for fstructs (see the description of the `fstruct` data type below).
 
 Finally the `alias` table will contain type description arrays as expected by the `array` or `sizedarray` data types, and described above. For example, if your data type often contains 32-byte long character strings, you can define an alias as follows:
 
@@ -235,7 +237,7 @@ This function will create a stream object based on a standard Lua file object. I
 
 ### serial.util.enum (half_enum)
 
-This function creates an enum as used by the `enum` data type. `half_enum` is a table containing one half of an enum descriptor, usually a simple mapping between names and values. It will create a new table, containing a bidirectionnal mapping between names and values, and values and names.
+This function creates an enum as used by the `enum` data type. `half_enum` is a table containing one half of an enum descriptor, usually a simple mapping between names and values. It will create a new table, containing a bidirectional mapping between names and values, and values and names.
 
 ---
 
@@ -272,16 +274,16 @@ In Lua it is stored as a regular `number`. When serializing, overflows and loss 
 	doc = [[
 A 64-bit unsigned integer. The `endianness` type parameters specifies the order of bytes in the stream. It is a string which can be either `'le'` for little-endian (least significant byte comes first), or `'be'` for big-endian (most significant byte comes first).
 
-In Lua it is stored as a regular `number`. When serializing, overflows and loss or precisions are ignored. When reading however, if the interger overflows the capacity of a Lua `number`, it is returned as a 8-byte string. Therefore `serialize` and `write` functions accept a string as input. When the `uint64` is a `string` on the Lua side it is always in little-endian order (ie. the string is reversed before writing or after reading if `endianness` is `'be'`).]],
+In Lua it is stored as a regular `number`. When serializing, overflows and loss or precisions are ignored. When reading however, if the integer overflows the capacity of a Lua `number`, it is returned as a 8-byte string. Therefore `serialize` and `write` functions accept a string as input. When the `uint64` is a `string` on the Lua side it is always in little-endian order (ie. the string is reversed before writing or after reading if `endianness` is `'be'`).]],
 }, {
 	name = 'enum',
 	params = {'dictionary', 'int_t'},
 	doc = [[
-The `enum` data type is similar to the C enum types. Its first type parameter, `dictionnary`, is a mapping between names and data (typically number values). It should be a Lua indexable type, like a `table`, with two key-value pairs for each mapping, one with the name as a key and the data as value, and one with the data as key and the name as value. This implies that a name has a single associated data and a given data has a single name.
+The `enum` data type is similar to the C enum types. Its first type parameter, `dictionary`, is a mapping between names and data (typically number values). It should be a Lua indexable type, like a `table`, with two key-value pairs for each mapping, one with the name as a key and the data as value, and one with the data as key and the name as value. This implies that a name has a single associated data and a given data has a single name.
 
 The Lua side manipulates the name, and when serialized its associated data is stored in the stream. The `enum` data type is transparent, and can accept any Lua type as either name or data. A typical scenario will have `string` names and integer `number` data.
 
-Since the names are only used as key or values of the `dicionnary`, they can be any Lua value except `nil`. However, the data associated to the name must be serializable. For that reason, the second type parameter of `enum`, `int_t`, is a type description of the data. It is used to serialize the data into streams. A data can therefore be any Lua type except `nil`, provided a suitable type description for serialization.]],
+Since the names are only used as key or values of the `dictionary`, they can be any Lua value except `nil`. However, the data associated to the name must be serializable. For that reason, the second type parameter of `enum`, `int_t`, is a type description of the data. It is used to serialize the data into streams. A data can therefore be any Lua type except `nil`, provided a suitable type description for serialization.]],
 }, {
 	name = 'flags',
 	params = {'dictionary', 'int_t'},
@@ -290,7 +292,7 @@ The `flags` data type is similar to the `enum` type, with several differences th
 
 When serializing, the Lua numbers associated with each name of the set are combined with the bit.bor function, to produce a single number, which will then be serialized according to the `int_t` type description.
 
-When reading, a single number is read according to `int_t`. Then, the data of each pair of the dictionnary is tested against the number with the bit.band function, and if the result is non-zero the name if the pair is insterted in the output set. For that reason, the dictionnary is a little different than in the `enum` data type case. First, it must be enumerable using the standard `pairs` Lua functions. It should thus be a Lua table, unless the `pairs` global is overriden. Second, only one direction of mapping is necessary, ie. the pairs with the name as key and the data as value. This also means that several names can have the same values. If that is the case, all the matching names will be present in the output set.]],
+When reading, a single number is read according to `int_t`. Then, the data of each pair of the dictionary is tested against the number with the bit.band function, and if the result is non-zero the name if the pair is inserted in the output set. For that reason, the dictionary is a little different than in the `enum` data type case. First, it must be enumerable using the standard `pairs` Lua functions. It should thus be a Lua table, unless the `pairs` global is overridden. Second, only one direction of mapping is necessary, ie. the pairs with the name as key and the data as value. This also means that several names can have the same values. If that is the case, all the matching names will be present in the output set.]],
 }, {
 	name = 'bytes',
 	params = {'count'},
@@ -300,16 +302,16 @@ This is a simple constant-size byte sequence. The size is passed in the `count` 
 	name = 'sizedbuffer',
 	params = {'size_t'},
 	doc = [[
-This is a simple byte buffer prefixed with a size. The size is serialized by the `size_t` type description. On the Lua side the buffer is a `string`, and its size is available through the Lua `#` operator. This type is similar to a `sizedarray` with a `value_t` of `uint8`, except that the array is not unpacked in a Lua array, it stays a Lua string. This is usefull to store strings with embedded zeros.]],
+This is a simple byte buffer prefixed with a size. The size is serialized by the `size_t` type description. On the Lua side the buffer is a `string`, and its size is available through the Lua `#` operator. This type is similar to a `sizedarray` with a `value_t` of `uint8`, except that the array is not unpacked in a Lua array, it stays a Lua string. This is useful to store strings with embedded zeros.]],
 }, {
 	name = 'array',
 	params = {'size', 'value_t'},
 	doc = [[
 The array data type is a fixed size array of values. The size of the array is the first type parameter. As such it is not stored in the stream. The values are passed as a Lua array, which is expected to be of the right size when serializing or writing. The values are serialized according to the `value_t` type descriptor.
 
-The `size` type parameter can have a special value, the string `'*'`. When serializing or writing, all the elements of the input array are serialized. When reading though, since there is no way to know how many elements to read, the stream is read until its end. For that reason the stream must implement a `'length'` method, which returns the number of bytes remaining in the stream. Actually the value can be innacurate, it should be 0 or less when the end of the stream is reached, and a positive value otherwise.
+The `size` type parameter can have a special value, the string `'*'`. When serializing or writing, all the elements of the input array are serialized. When reading though, since there is no way to know how many elements to read, the stream is read until its end. For that reason the stream must implement a `'length'` method, which returns the number of bytes remaining in the stream. Actually the value can be inaccurate, it should be 0 or less when the end of the stream is reached, and a positive value otherwise.
 
-For variable size array, but when some size information is stored in the stream, the `'*'` special `size` by itself is usually not the way to go. Instead, if the size is expressed in the number elements before the array, you can use the `sizedarray` data type. If the size is expressed as a number of bytes, you can use the `sizedvalue` data type in conjonction with the `array` type and a `'*'` size. Finally when the size is not stored directly before the array, you can use the `fstruct` data type and use a struct field as the `array` type parameter.]],
+For variable size array, but when some size information is stored in the stream, the `'*'` special `size` by itself is usually not the way to go. Instead, if the size is expressed in the number elements before the array, you can use the `sizedarray` data type. If the size is expressed as a number of bytes, you can use the `sizedvalue` data type in conjunction with the `array` type and a `'*'` size. Finally when the size is not stored directly before the array, you can use the `fstruct` data type and use a struct field as the `array` type parameter.]],
 }, {
 	name = 'sizedarray',
 	params = {'size_t', 'value_t'},
@@ -323,7 +325,7 @@ This data type consist of the concatenation of another value and its size. In th
 
 However this type has to be handled with care. When serializing, the value has to be serialized in its entirety before being returned or written, so that its size can be computed. This means its serialized version will exist completely in memory.
 
-On the other hand, when reading the value, the whole serialized value is first read into a temporary memory buffer. Then, when deserializing the value itself, it is deserialized from a temporary buffer stream created on the fly, which have a length method, and so even if the stream from which the `sizedvalue` is read hasn't one. This means the value can have a pseudo-infinite data type (like the `array` type with a `'*'` size, or a `struct` ending with one), even if there are additionnal data after the `sizedvalue`.]],
+On the other hand, when reading the value, the whole serialized value is first read into a temporary memory buffer. Then, when deserializing the value itself, it is deserialized from a temporary buffer stream created on the fly, which have a length method, and so even if the stream from which the `sizedvalue` is read hasn't one. This means the value can have a pseudo-infinite data type (like the `array` type with a `'*'` size, or a `struct` ending with one), even if there are additional data after the `sizedvalue`.]],
 }, {
 	name = 'cstring',
 	params = {},
@@ -426,7 +428,7 @@ io.output(file_examples)
 header()
 
 chapter('<a name="examples">Examples</a>', [[
-No educative examples are yet available for Lunary, but it is already used to read and write .met files (the ones used by various ed2k P2P clients) by the ed2k-ltools software suite. Datatypes describing these file formats are available in the [`serial/met.lua` file](http://piratery.net/hg/ed2k-ltools/raw-file/tip/met-ltools/serial/met.lua).]])
+No educative examples are yet available for Lunary, but it is already used to read and write .met files (the ones used by various ed2k P2P clients) by the ed2k-ltools software suite. Data types describing these file formats are available in the [`serial/met.lua` file](http://piratery.net/hg/ed2k-ltools/raw-file/tip/met-ltools/serial/met.lua).]])
 
 footer()
 
