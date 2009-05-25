@@ -110,6 +110,7 @@ Here are some points that I'm going to improve in the near future:
 - add signed integer support
 - better document errors thrown by the library
 - add a native endianness for types with endianness parameter, or a way to query the native endianness
+- have boolean8 be replaced by boolean, with a type parameter for the number holder
 
 ]])
 
