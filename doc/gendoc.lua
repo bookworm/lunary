@@ -92,11 +92,11 @@ Lunary is a framework to read and write structured binary data to files or netwo
 
 All support is done through the Lua mailing list. If the traffic becomes too important a specialized mailing list will be created.
 
-Feel free to ask for further developments. I can't guarantee that I'll develop everything you ask, but I want my code to be as useful as possible, so I'll do my best to help you. You can also send me request or bug reports (for code and documentation) directly at [jerome.vuarand@gmail.com](mailto:jerome.vuarand@gmail.com).
+Feel free to ask for further developments, especially new data types. I can't guarantee that I'll develop everything you ask, but I want my code to be as useful as possible, so I'll do my best to help you. You can also send me request or bug reports (for code and documentation) directly at [jerome.vuarand@gmail.com](mailto:jerome.vuarand@gmail.com).
 
 ## Credits
 
-This module is written and maintained by Jérôme Vuarand.
+This module is written and maintained by [Jérôme Vuarand](mailto:jerome.vuarand@gmail.com).
 
 Lunary is available under a [MIT-style license](LICENSE.txt).
 ]])
@@ -114,7 +114,12 @@ Lunary consists of two Lua modules named `serial` and `serial.util`. There is a 
 
 A simple makefile is provided. The `build` target builds the `serial.optim` binary module. The `install` target installs all the Lunary modules to the `PREFIX` installation path, which is defined in the Makefile and can be overriden with an environment variable. The `installpure` target only install pure Lua modules, it can be used on platforms where compiling or using C modules is problematic.
 
-Finally note that Lunary uses Roberto Ierusalimschy's struct library to read and write floats. The library is available at [http://www.inf.puc-rio.br/~roberto/struct/](http://www.inf.puc-rio.br/~roberto/struct/). If it is not available Lunary won't be able to use the `'float'` data type, but all other predefined types should work as expected.]])
+Finally note that Lunary has some optionnal dependencies. If the dependency is not available, the data types using them will not be available to Lunary users. Here are the data types with dependencies:
+
+- the `float` data type uses [Roberto Ierusalimschy's struct library](http://www.inf.puc-rio.br/~roberto/struct/) to serialize native floating point numbers. The library is available at [http://www.inf.puc-rio.br/~roberto/struct/](http://www.inf.puc-rio.br/~roberto/struct/).
+- the `flags` data type uses the [BitOp library](http://bitop.luajit.org/) for bit-wise boolean operations. The library is available at [http://bitop.luajit.org/](http://bitop.luajit.org/).
+
+Note than many other libraries have similar functionnality. I wouldn't mind adding support for some of these, just ask.]])
 
 footer()
 
