@@ -101,6 +101,16 @@ Feel free to ask for further developments, especially new data types. I can't gu
 This module is written and maintained by [Jérôme Vuarand](mailto:jerome.vuarand@gmail.com).
 
 Lunary is available under a [MIT-style license](LICENSE.txt).
+
+## To do
+
+Here are some points that I'm going to improve in the near future:
+
+- add double precision floating point support
+- add signed integer support
+- better document errors thrown by the library
+- add a native endianness for types with endianness parameter, or a way to query the native endianness
+
 ]])
 
 chapter('<a name="download">Download</a>', [[
