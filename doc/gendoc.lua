@@ -380,7 +380,7 @@ The `struct` data type can describe complex compound data types, like C structs.
 	name = 'fstruct',
 	params = {'f', '...'},
 	doc = [[
-The `fstruct` is the most complex data type provided by Lunary. When a data type is too complex to be described by any predefined data type, or a compound of them assembled with the `struct` data type, you usually have to provide low level serialization functions. This means you have to write a `read` function and either a `write` or a `serialize` function. However for many data types, there is some redundancy between the read and the write parts.
+The `fstruct`, a shortcut for *function-struct*, is the most complex data type provided by Lunary. When a data type is too complex to be described by any predefined data type, or a compound of them assembled with the `struct` data type, you usually have to provide low level serialization functions. This means you have to write a `read` function and either a `write` or a `serialize` function. However for many data types, there is some redundancy between the read and the write parts.
 
 The `fstruct` data type is meant to alleviate this redundancy when possible. Like its simpler `struct` cousin, it is used to describe C-like structs. Therefore, the serialized value will always be a Lua object (created as a table). However, its main type parameter, `f`, is a function (or any callable Lua type) which is called both for serialization and deserialization. Its prototype is as follows:
 	
