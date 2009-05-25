@@ -543,16 +543,36 @@ end
 local success,libstruct = pcall(require, 'struct')
 if success then
 
-function serialize.float(value)
-	return libstruct.pack("f", value)
+function serialize.float(value, endianness)
+	local format
+	if endianness=='le' then
+		format = "<f"
+	elseif endianness=='be' then
+		format = ">f"
+	else
+		error("unknown endianness")
+	end
+	local data = libstruct.pack(format, value)
+	if #data ~= 4 then
+		error("struct library \"f\" format doesn't correspond to a 32 bits float")
+	end
+	return data
 end
 
-function read.float(stream)
+function read.float(stream, endianness)
+	local format
+	if endianness=='le' then
+		format = "<f"
+	elseif endianness=='be' then
+		format = ">f"
+	else
+		error("unknown endianness")
+	end
 	local data,err = stream:receive(4)
 	if not data then
 		return nil,err
 	end
-	return libstruct.unpack("f", data)
+	return libstruct.unpack(format, data)
 end
 
 end
