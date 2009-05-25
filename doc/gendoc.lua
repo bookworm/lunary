@@ -372,34 +372,43 @@ The `struct` data type can describe complex compound data types, like C structs.
 	doc = [[
 The `fstruct` is the most complex data type provided by Lunary. When a data type is too complex to be described by any predefined data type, or a compound of them assembled with the `struct` data type, you usually have to provide low level serialization functions. This means you have to write a `read` function and either a `write` or a `serialize` function. However for many data types, there is some redundancy between the read and the write parts.
 
-The `fstruct` data type is meant to alleviate this redundancy in some cases. Like its simpler `struct` cousin, it is used to describe C-like structs. However, its main type parameter, `f`, is a function (or any callable Lua type) which is called both for serialization and deserialization. For that function to describe the structure fields, it receives a special parameter that will be used to describe the type, while still letting the function its ability to have a complex flow of execution. Let's call this parameter the context, although it usually won't be called that way for reasons explained below.
+The `fstruct` data type is meant to alleviate this redundancy when possible. Like its simpler `struct` cousin, it is used to describe C-like structs. Therefore, the serialized value will always be a Lua object (created as a table). However, its main type parameter, `f`, is a function (or any callable Lua type) which is called both for serialization and deserialization. Its prototype is as follows:
+	
+    function f(value, declare_field)
+	
+For that function to describe the structure fields, it receives two special parameters that will be used to describe the type. The first parameter `value` is the object being serialized itself, usually a Lua table. It is passed both when serializing and deserializing the object, this means that its content can be queried at any moment to influence the serialized data format. The second parameter, `declare_field`, is a function which can be used to declare a field. That function will have a different effect depending on whether is currently serializing or deserializing the object. The `declare_field` prototype is as follows:
 
-The context can be used in two ways. First, it can be indexed. When indexing it, it will access the underlying struct object fields, both when reading and writing fields. However when serializing you don't want to write fields, and when deserializing you don't want to read them. Here enters the second way to use the context: it can be called. When called, the context expects a single parameter, which is a field name. This call won't do anything per-se, but it will return a closure. That closure should be called with an unpacked type description. Calling the closure will have the effect of declaring a field of the struct. Declaring a field will then have a different effect whether the function `f` is currently being called with a serialization or a deserialization context.
+    function declare_field(name, type, ...)
 
-What is important to keep in mind, is that you can use all Lua control flow structures within the serialization function. And since the function is called for each serialization and deserialization, you can describe truly flexible types with it. Let's take a common example. The following `fstruct` type function describe a *tag* type which have three fields: a *name*, a *type*, and a *content*. Depending on the *type* value, the *content* will be serialized with different Lunary type descriptors:
+The `name` parameter is the field name. The `type` parameter is the field Lunary type name. The additionnal parameters are passed to the field type as type parameters.
 
-    local tag_types = serial.util.enum{
-        string = 1,
-        integer = 2,
-        float = 3,
-    }
-    local tag = function(self)
-        self 'name' ('cstring')
-        self 'type' ('enum', tag_types)
-        if self.type=='string' then
-            self 'content' ('cstring')
-        elseif self.type=='integer' then
-            self 'content' ('uint32', 'le')
-        elseif self.type=='float' then
-            self 'content' ('float', 'le')
-        else
-            error("invalid tag type "..tostring(self.type))
+What is important to keep in mind, is that you can use all Lua control flow structures within the `f` function. Also since `declare_field` is called for each field of the object every time the object is serialized or deserialized, all its parameters can be dependent on the object content. Let's take a simple example. The following `fstruct` type function describe a *attribute* type which have three fields: a *name*, a *value*, and a *version*. Additionnaly, if the *version* is greater than or equal to 2, the attribute have a *comment* field:
+
+    local attribute = function(value, declare_field)
+        declare_field('version', 'uint32', 'le')
+        declare_field('name', 'cstring')
+        declare_field('value', 'uint32', 'le')
+        if value.version >= 2 then
+            declare_field('comment', 'cstring')
         end
     end
-    return serial.read.fstruct(stream, tag)
+    return serial.read.fstruct(stream, attribute)
 
-As you can see, we used the name `self` for the context object. This is because when indexing it we access the object being serialized itself, `self` being the standard name for the current object when using Lua object-orientated syntactic sugars. When declaring fields, you can read `self 'name' ('cstring')` as *"self name is a cstring"*.
-]],
+Of course order and parameters of calls to `declare_field` shouldn't be dependent on fields not yet serialized, otherwise deserialization cannot work. This is why in the example above *version* has to be declared before *comment*.
+
+Finally the `fstruct` data type implements two syntactic sugars to be able to write better looking `f` functions. The `value` parameter is actually a proxy table, which redirects fields reads and writes to the actual object. This proxy implements a __call metamethod. When calling the `value` parameter, it is like you are calling the `declare_field` function. The second syntactic sugar is used when you pass only one parameter to the `declare_field` method. In that situation, since the field type name is necessary, `declare_field` doesn't immediately declares the type. Instead it returns a closure, which can be called with a type name to declare the field. Instead of calling `declare_field('value', 'uint32', 'le')` you can call `declare_field 'value' ('uint32', 'le')`. You can combine these two syntactic sugars. With them, you can rewrite the above attribute type as follows:
+
+    local attribute = function(self)
+        self 'version' ('uint32', 'le')
+        self 'name' ('cstring')
+        self 'value' ('uint32', 'le')
+        if self.version >= 2 then
+            self 'comment' ('cstring')
+        end
+    end
+    return serial.read.fstruct(stream, attribute)
+
+As you can see, we used the name `self` for both the `value` and `declare_field` parameters. This is because self is the standard name for the current object when using Lua object-orientated syntactic sugars. When declaring fields, you can read `self 'name' ('cstring')` as `"self name is a cstring"`.]],
 } }
 
 manual = markdown(manual)
