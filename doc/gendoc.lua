@@ -171,13 +171,15 @@ Lunary provides several basic data types, and some more complex compound data ty
 
 ### %chapterid%.3.1 - Type description as type parameters
 
-Most of these compound data types contain sub-elements, but are described in the Lunary source code in a generic way. To use them with a given type for their sub-elements, a type description has to be given as one or more of their type parameters. Usually, type description as type parameters are passed as a Lua array, with the first array entry being the sub-element type name, and subsequent array entries being the sub-type type parameters. However when only a single sub-type description is necessary, the array may be expected as unpacked at the end of the parent type-parameter list. For example, to read an array or ten 8-bit numbers, one can call:
+Most of these compound data types contain sub-elements, but are described in the Lunary source code in a generic way. To use them with a given type for their sub-elements, one or more type descriptors has to be given as their type parameters. A type descriptor is a Lua array, with the first array element being the type name, and subsequent array elements being the type parameters. For example `{'uint32', 'le'}` is a type descriptor for a little-endian 32-bits unsigned integer.
 
-    serial.read.array(stream, 10, 'uint8')
+When the last type parameter of a Lunary data type is a type descriptor, the descriptor can be passed unpacked as final type parameters. For example:
 
-When several sub-types are necessary, they are passed in Lua tables. So for example to read an array of C strings, prefixed by the number of string in a little-endian 16-bit integer, one can call:
+    serial.read.array(stream, 16, {'uint32', 'le'})
 
-    serial.read.sizedarray(stream, {'uint16', 'le'}, {'cstring'})
+is equivalent to:
+
+    serial.read.array(stream, 16, 'uint32', 'le')
 
 ### %chapterid%.3.2 - Naming `struct`-based and `fstruct`-based data types, aliases
 
@@ -189,7 +191,7 @@ The `struct` and `fstruct` (as described below) are very handy to describe compl
     }
     serial.read.struct(stream, attribute)
 
-To share data types between libraries though, this may not be very handy. Lunary provides a way to define named data types. To do that three tables in the `serial` module are available: `serial.struct`, `serial.fstruct` and `serial.alias`. The first two are used to create named types based on structs and fstructs respectively, while the last one is used to give a name to any type. For example, the above `attribute` data type can be created like that:
+To build complex structs containing other structs, this may not be very handy. Lunary provides a way to define named data types. To do that three tables in the `serial` module are available: `serial.struct`, `serial.fstruct` and `serial.alias`. The first two are used to create named types based on structs and fstructs respectively, while the last one is used to give a name to any type. For example, the above `attribute` data type can be created like that:
 
     serial.struct.attribute = {
         {'name', 'cstring'},
@@ -208,7 +210,7 @@ Finally the `alias` table will contain type description arrays as expected by th
 
 You can then read such strings with the `serial.read.string32` function, or even include that new data type in compounds types, for example:
 
-    serial.struct.disk = {
+    serial.struct.record = {
         {'artist', 'string32'},
         {'title', 'string32'},
         {'genre', 'string32'},
@@ -220,12 +222,21 @@ You can then read such strings with the `serial.read.string32` function, or even
 
 ### serial.buffer (data)
 
+This function will create an input stream object based on a Lua string. It implements the `receive` and `length` methods. It is used to deserialize an object from an in-memory byte buffer. To serialize an object in-memory, you can simply use the Lunary `serial.serialize` functions which will generate a Lua string.
+
 ### serial.filestream (file)
+
+This function will create a stream object based on a standard Lua file object. It will indirectly map its `receive`, `send` and `length` methods to the `read`, `write` and `seek` methods of the file object.
+
+### serial.util.enum (half_enum)
+
+This function creates an enum as used by the `enum` data type. `half_enum` is a table containing one half of an enum descriptor, usually a simple mapping between names and values. It will create a new table, containing a bidirectionnal mapping between names and values, and values and names.
 
 ---
 
 ## %chapterid%.5 - Data type reference
 
+Here is a description of the built-in data types provided with Lunary. Some of these types take type descriptors as parameter (as described above). They are usually denoted with a `_t` suffix in the parameter name.
 ]]
 
 
@@ -276,53 +287,112 @@ When serializing, the Lua numbers associated with each name of the set are combi
 
 When reading, a single number is read according to `int_t`. Then, the data of each pair of the dictionnary is tested against the number with the bit.band function, and if the result is non-zero the name if the pair is insterted in the output set. For that reason, the dictionnary is a little different than in the `enum` data type case. First, it must be enumerable using the standard `pairs` Lua functions. It should thus be a Lua table, unless the `pairs` global is overriden. Second, only one direction of mapping is necessary, ie. the pairs with the name as key and the data as value. This also means that several names can have the same values. If that is the case, all the matching names will be present in the output set.]],
 }, {
+	name = 'bytes',
+	params = {'count'},
+	doc = [[
+This is a simple constant-size byte sequence. The size is passed in the `count` type parameter. The data is a `string` in Lua. When serializing or writing, the string passed should have the proper length otherwise an error is thrown.]],
+}, {
 	name = 'sizedbuffer',
-	params = {'size_t', 'value_t'},
-	doc = [[]],
+	params = {'size_t'},
+	doc = [[
+This is a simple byte buffer prefixed with a size. The size is serialized by the `size_t` type description. On the Lua side the buffer is a `string`, and its size is available through the Lua `#` operator. This type is similar to a `sizedarray` with a `value_t` of `uint8`, except that the array is not unpacked in a Lua array, it stays a Lua string. This is usefull to store strings with embedded zeros.]],
 }, {
 	name = 'array',
 	params = {'size', 'value_t'},
-	doc = [[]],
-}, {
-	name = 'sizedvalue',
-	params = {'size_t', 'value_t'},
-	doc = [[]],
+	doc = [[
+The array data type is a fixed size array of values. The size of the array is the first type parameter. As such it is not stored in the stream. The values are passed as a Lua array, which is expected to be of the right size when serializing or writing. The values are serialized according to the `value_t` type descriptor.
+
+The `size` type parameter can have a special value, the string `'*'`. When serializing or writing, all the elements of the input array are serialized. When reading though, since there is no way to know how many elements to read, the stream is read until its end. For that reason the stream must implement a `'length'` method, which returns the number of bytes remaining in the stream. Actually the value can be innacurate, it should be 0 or less when the end of the stream is reached, and a positive value otherwise.
+
+For variable size array, but when some size information is stored in the stream, the `'*'` special `size` by itself is usually not the way to go. Instead, if the size is expressed in the number elements before the array, you can use the `sizedarray` data type. If the size is expressed as a number of bytes, you can use the `sizedvalue` data type in conjonction with the `array` type and a `'*'` size. Finally when the size is not stored directly before the array, you can use the `fstruct` data type and use a struct field as the `array` type parameter.]],
 }, {
 	name = 'sizedarray',
 	params = {'size_t', 'value_t'},
-	doc = [[]],
+	doc = [[
+A `sizedarray` is an array with its size stored in the stream before it, so it can be read efficiently and at any position inside the stream. The size comes first in the stream, described by `size_t`. Then follows a sequence of elements of that size, each element being described by `value_t`.]],
+}, {
+	name = 'sizedvalue',
+	params = {'size_t', 'value_t'},
+	doc = [[
+This data type consist of the concatenation of another value and its size. In the stream the size is stored first, according to the `size_t` type descriptor. It is followed by the value, described by `value_t`.
+
+However this type has to be handled with care. When serializing, the value has to be serialized in its entirety before being returned or written, so that its size can be computed. This means its serialized version will exist completely in memory.
+
+On the other hand, when reading the value, the whole serialized value is first read into a temporary memory buffer. Then, when deserializing the value itself, it is deserialized from a temporary buffer stream created on the fly, which have a length method, and so even if the stream from which the `sizedvalue` is read hasn't one. This means the value can have a pseudo-infinite data type (like the `array` type with a `'*'` size, or a `struct` ending with one), even if there are additionnal data after the `sizedvalue`.]],
 }, {
 	name = 'cstring',
 	params = {},
-	doc = [[]],
+	doc = [[
+A `cstring` stores a Lua string unmodified, terminated by a null byte. Since no other size information is stored in the stream or provided as a type parameter, the serialized string cannot contain embedded null bytes. This type is useful to store text strings.]],
 }, {
 	name = 'float',
-	params = {},
-	doc = [[]],
-}, {
-	name = 'bytes',
-	params = {'count'},
-	doc = [[]],
+	params = {'endianness'},
+	doc = [[
+This data type stores a 32 bits float, using the [struct library](http://www.inf.puc-rio.br/~roberto/struct/). The type is therefore only available if the library is available. Like integer types, the `endianness` type parameters specifies the byte order in the stream: `'le'` stands for little-endian (least significant byte comes first), and `'be'` stands for big-endian (most significant byte comes first). A Lua number is simply serialized using the struct library type format `"<f"` in little-endian mode, and `">f"` in big-endian mode.]],
 }, {
 	name = 'bytes2hex',
 	params = {'count'},
-	doc = [[]],
+	doc = [[
+This data type represents a sequence of 4-bits numbers concatenated in a byte string. Each byte contains two 4-bit numbers. Within the bytes bits are considered to be in the big-endian order. It means the most significant 4 bits of the byte contain the first number of the byte. Each number is converted to an hexadecimal number.]],
 }, {
 	name = 'bytes2base32',
 	params = {'count'},
-	doc = [[]],
+	doc = [[
+This data type represents a sequence of 5-bits numbers concatenated in a byte string. Each group of height 5-bits number spans over five bytes. Each byte contains bits for two to three 5-bit numbers. Within the bytes bits are considered to be in the big-endian order. It means that when a number spans two bytes, its most significant bits are the least significant bits of the first byte, and its least significant bits are the most significant bits of the second byte.
+
+Each 5-bit number is converted to a single character with the following mapping: 0 => 'A', 1 => 'B', 2 => 'C', 3 => 'D', 4 => 'E', 5 => 'F', 6 => 'G', 7 => 'H', 8 => 'I', 9 => 'J', 10 => 'K', 11 => 'L', 12 => 'M', 13 => 'N', 14 => 'O', 15 => 'P', 16 => 'Q', 17 => 'R', 18 => 'S', 19 => 'T', 20 => 'U', 21 => 'V', 22 => 'W', 23 => 'X', 24 => 'Y', 25 => 'Z', 26 => '2', 27 => '3', 28 => '4', 29 => '5', 30 => '6' and 31 => '7'.
+]],
 }, {
 	name = 'boolean8',
 	params = {},
-	doc = [[]],
+	doc = [[
+This type stores a boolean value in an 8-bit unsigned integer. The integer is 1 for `true`, 0 for `false`. When reading, if the integer is neither 1 nor 0, it is returned as is, as a Lua `number`. Therefore for symmetry it is possible to pass a `number` when serializing a `boolean8`.]],
 }, {
 	name = 'struct',
 	params = {'fields'},
-	doc = [[]],
+	doc = [[
+The `struct` data type can describe complex compound data types, like C structs. Like C structs, it is described by a sequence of named fields. The `fields` type parameter is an array, each element defining a field with a sub-array. This sub-array first element is the field name, the second element is the field type, and all subsequent elements are the type parameters. For example, here is the description of a `struct` with two fields, a `cstring` name and an `uint32` value:
+
+    local attribute = {
+        {'name', 'cstring'},
+        {'value', 'uint32', 'le'},
+    }
+    return serial.read.struct(stream, attribute)
+]],
 }, {
 	name = 'fstruct',
 	params = {'f', '...'},
-	doc = [[]],
+	doc = [[
+The `fstruct` is the most complex data type provided by Lunary. When a data type is too complex to be described by any predefined data type, or a compound of them assembled with the `struct` data type, you usually have to provide low level serialization functions. This means you have to write a `read` function and either a `write` or a `serialize` function. However for many data types, there is some redundancy between the read and the write parts.
+
+The `fstruct` data type is meant to alleviate this redundancy in some cases. Like its simpler `struct` cousin, it is used to describe C-like structs. However, its main type parameter, `f`, is a function (or any callable Lua type) which is called both for serialization and deserialization. For that function to describe the structure fields, it receives a special parameter that will be used to describe the type, while still letting the function its ability to have a complex flow of execution. Let's call this parameter the context, although it usually won't be called that way for reasons explained below.
+
+The context can be used in two ways. First, it can be indexed. When indexing it, it will access the underlying struct object fields, both when reading and writing fields. However when serializing you don't want to write fields, and when deserializing you don't want to read them. Here enters the second way to use the context: it can be called. When called, the context expects a single parameter, which is a field name. This call won't do anything per-se, but it will return a closure. That closure should be called with an unpacked type description. Calling the closure will have the effect of declaring a field of the struct. Declaring a field will then have a different effect whether the function `f` is currently being called with a serialization or a deserialization context.
+
+What is important to keep in mind, is that you can use all Lua control flow structures within the serialization function. And since the function is called for each serialization and deserialization, you can describe truly flexible types with it. Let's take a common example. The following `fstruct` type function describe a *tag* type which have three fields: a *name*, a *type*, and a *content*. Depending on the *type* value, the *content* will be serialized with different Lunary type descriptors:
+
+    local tag_types = serial.util.enum{
+        string = 1,
+        integer = 2,
+        float = 3,
+    }
+    local tag = function(self)
+        self 'name' ('cstring')
+        self 'type' ('enum', tag_types)
+        if self.type=='string' then
+            self 'content' ('cstring')
+        elseif self.type=='integer' then
+            self 'content' ('uint32', 'le')
+        elseif self.type=='float' then
+            self 'content' ('float', 'le')
+        else
+            error("invalid tag type "..tostring(self.type))
+        end
+    end
+    return serial.read.fstruct(stream, tag)
+
+As you can see, we used the name `self` for the context object. This is because when indexing it we access the object being serialized itself, `self` being the standard name for the current object when using Lua object-orientated syntactic sugars. When declaring fields, you can read `self 'name' ('cstring')` as *"self name is a cstring"*.
+]],
 } }
 
 manual = markdown(manual)
