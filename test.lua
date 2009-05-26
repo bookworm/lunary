@@ -94,6 +94,9 @@ local tests = {
 	{{'boolean8'}, false, string.char(0x00)},
 	{{'boolean8'}, true, string.char(0x01)},
 
+	{{'boolean', 'uint16', 'le'}, false, string.char(0x00, 0x00)},
+	{{'boolean', 'uint16', 'be'}, true, string.char(0x00, 0x01)},
+
 	{{'struct', struct_desc}, object, "foo"..'\0'..string.char(42, 0, 0, 0)},
 
 	{{'fstruct', fstruct_closure1}, object, "foo"..'\0'..string.char(42, 0, 0, 0)},

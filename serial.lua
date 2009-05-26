@@ -720,17 +720,25 @@ end
 
 ------------------------------------------------------------------------------
 
-function serialize.boolean8(value)
+function serialize.boolean(value, int_t, ...)
+	if type(int_t)~='table' or select('#', ...)>=1 then
+		int_t = {int_t, ...}
+	end
 	if type(value)=='boolean' then
 		value = value and 1 or 0
 	end
-	local sdata,err = serialize.uint8(value)
+	local serialize = assert(serialize[int_t[1]], "unknown integer type "..tostring(int_t[1]).."")
+	local sdata,err = serialize(value, unpack(int_t, 2))
 	if not sdata then return nil,err end
 	return sdata
 end
 
-function read.boolean8(stream)
-	local value,err = read.uint8(stream)
+function read.boolean(stream, int_t, ...)
+	if type(int_t)~='table' or select('#', ...)>=1 then
+		int_t = {int_t, ...}
+	end
+	local read = assert(read[int_t[1]], "unknown integer type "..tostring(int_t[1]).."")
+	local value,err = read(stream, unpack(int_t, 2))
 	if not value then
 		return nil,err
 	end
@@ -743,6 +751,8 @@ function read.boolean8(stream)
 		return value
 	end
 end
+
+alias.boolean8 = {'boolean', 'uint8'}
 
 ------------------------------------------------------------------------------
 

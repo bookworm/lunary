@@ -109,7 +109,6 @@ Here are some points that I'm going to improve in the near future:
 - add signed 64-bits integer support
 - better document errors thrown by the library
 - add a native endianness for types with endianness parameter, or a way to query the native endianness
-- have boolean8 be replaced by boolean, with a type parameter for the number holder
 
 ]])
 
@@ -386,10 +385,10 @@ This data type represents a sequence of 5-bits numbers concatenated in a byte st
 Each 5-bit number is converted to a single character with the following mapping: 0 is 'A', 1 is 'B', 2 is 'C', 3 is 'D', 4 is 'E', 5 is 'F', 6 is 'G', 7 is 'H', 8 is 'I', 9 is 'J', 10 is 'K', 11 is 'L', 12 is 'M', 13 is 'N', 14 is 'O', 15 is 'P', 16 is 'Q', 17 is 'R', 18 is 'S', 19 is 'T', 20 is 'U', 21 is 'V', 22 is 'W', 23 is 'X', 24 is 'Y', 25 is 'Z', 26 is '2', 27 is '3', 28 is '4', 29 is '5', 30 is '6' and 31 is '7'.
 ]],
 }, {
-	name = 'boolean8',
-	params = {},
+	name = 'boolean',
+	params = {'int_t'},
 	doc = [[
-This type stores a boolean value in an 8-bit unsigned integer. The integer is 1 for `true`, 0 for `false`. When reading, if the integer is neither 1 nor 0, it is returned as is, as a Lua `number`. Therefore for symmetry it is possible to pass a `number` when serializing a `boolean8`.]],
+This type stores a boolean value in an integer. The integer type is described by `int_t`. The integer is 1 for `true`, 0 for `false`. When reading, if the integer is neither 1 nor 0, it is returned as is, as a Lua `number`. Therefore for symmetry it is possible to pass a `number` when serializing a `boolean`.]],
 }, {
 	name = 'struct',
 	params = {'fields'},
