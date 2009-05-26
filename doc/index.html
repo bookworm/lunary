@@ -46,8 +46,7 @@ lang="en">
 <p>Here are some points that I'm going to improve in the near future:</p>
 
 <ul>
-    <li>add double precision floating point support</li>
-    <li>add signed integer support</li>
+    <li>add signed 64-bits integer support</li>
     <li>better document errors thrown by the library</li>
     <li>add a native endianness for types with endianness parameter, or a way to query the native endianness</li>
 </ul>
@@ -77,7 +76,7 @@ lang="en">
 <p>Finally note that Lunary has some optional dependencies. If the dependency is not available, the data types using them will not be available to Lunary users. Here are the data types with dependencies:</p>
 
 <ul>
-    <li>the <code>float</code> data type uses <a href="http://www.inf.puc-rio.br/~roberto/struct/">Roberto Ierusalimschy's struct library</a> to serialize native floating point numbers. The library is available at <a href="http://www.inf.puc-rio.br/~roberto/struct/">http://www.inf.puc-rio.br/~roberto/struct/</a>.</li>
+    <li>the <code>float</code> and <code>double</code> data types uses <a href="http://www.inf.puc-rio.br/~roberto/struct/">Roberto Ierusalimschy's struct library</a> to serialize native floating point numbers. The library is available at <a href="http://www.inf.puc-rio.br/~roberto/struct/">http://www.inf.puc-rio.br/~roberto/struct/</a>.</li>
     <li>the <code>flags</code> data type uses the <a href="http://bitop.luajit.org/">BitOp library</a> for bit-wise boolean operations. The library is available at <a href="http://bitop.luajit.org/">http://bitop.luajit.org/</a>.</li>
 </ul>
 
@@ -85,7 +84,7 @@ lang="en">
 </div>
 
 <div class="chapter" id="footer">
-<small>Last update: 2009-05-26 00:59:18 CEST</small>
+<small>Last update: 2009-05-26 02:54:56 CEST</small>
 </div>
 
 </body>
