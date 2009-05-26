@@ -382,7 +382,48 @@ This data type represents a sequence of 4-bits numbers concatenated in a byte st
 	doc = [[
 This data type represents a sequence of 5-bits numbers concatenated in a byte string. Each group of height 5-bits number spans over five bytes. Each byte contains bits for two to three 5-bit numbers. Within the bytes bits are considered to be in the big-endian order. It means that when a number spans two bytes, its most significant bits are the least significant bits of the first byte, and its least significant bits are the most significant bits of the second byte.
 
-Each 5-bit number is converted to a single character with the following mapping: 0 is 'A', 1 is 'B', 2 is 'C', 3 is 'D', 4 is 'E', 5 is 'F', 6 is 'G', 7 is 'H', 8 is 'I', 9 is 'J', 10 is 'K', 11 is 'L', 12 is 'M', 13 is 'N', 14 is 'O', 15 is 'P', 16 is 'Q', 17 is 'R', 18 is 'S', 19 is 'T', 20 is 'U', 21 is 'V', 22 is 'W', 23 is 'X', 24 is 'Y', 25 is 'Z', 26 is '2', 27 is '3', 28 is '4', 29 is '5', 30 is '6' and 31 is '7'.
+Each 5-bit number is converted to a single character with the following mapping:
+
+<table>
+<tbody><tr><td><ul>
+<li>0 is 'A'</li>
+<li>1 is 'B'</li>
+<li>2 is 'C'</li>
+<li>3 is 'D'</li>
+<li>4 is 'E'</li>
+<li>5 is 'F'</li>
+<li>6 is 'G'</li>
+<li>7 is 'H'</li>
+</ul></td><td><ul>
+<li>8 is 'I'</li>
+<li>9 is 'J'</li>
+<li>10 is 'K'</li>
+<li>11 is 'L'</li>
+<li>12 is 'M'</li>
+<li>13 is 'N'</li>
+<li>14 is 'O'</li>
+<li>15 is 'P'</li>
+</ul></td><td><ul>
+<li>16 is 'Q'</li>
+<li>17 is 'R'</li>
+<li>18 is 'S'</li>
+<li>19 is 'T'</li>
+<li>20 is 'U'</li>
+<li>21 is 'V'</li>
+<li>22 is 'W'</li>
+<li>23 is 'X'</li>
+</ul></td><td><ul>
+<li>24 is 'Y'</li>
+<li>25 is 'Z'</li>
+<li>26 is '2'</li>
+<li>27 is '3'</li>
+<li>28 is '4'</li>
+<li>29 is '5'</li>
+<li>30 is '6'</li>
+<li>31 is '7'</li>
+</ul></td></tr></tbody>
+</table>
+
 ]],
 }, {
 	name = 'boolean',
