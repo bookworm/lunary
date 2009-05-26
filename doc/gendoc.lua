@@ -92,7 +92,7 @@ All built-in data types preserve all the information they read from the streams.
 
 ## Support
 
-All support is done through the Lua mailing list. If the traffic becomes too important a specialized mailing list will be created.
+All support is done through the [Lua mailing list](http://www.lua.org/lua-l.html). If the traffic becomes too important a specialized mailing list will be created.
 
 Feel free to ask for further developments, especially new data types. I can't guarantee that I'll develop everything you ask, but I want my code to be as useful as possible, so I'll do my best to help you. You can also send me request or bug reports (for code and documentation) directly at [jerome.vuarand@gmail.com](mailto:jerome.vuarand@gmail.com).
 
