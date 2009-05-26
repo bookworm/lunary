@@ -106,7 +106,7 @@ Lunary is available under a [MIT-style license](LICENSE.txt).
 
 Here are some points that I'm going to improve in the near future:
 
-- add signed integer support
+- add signed 64-bits integer support
 - better document errors thrown by the library
 - add a native endianness for types with endianness parameter, or a way to query the native endianness
 - have boolean8 be replaced by boolean, with a type parameter for the number holder
@@ -265,6 +265,13 @@ An 8-bit unsigned integer.
 
 In Lua it is stored as a regular `number`. When serializing, overflows and loss or precisions are ignored.]],
 }, {
+	name = 'sint8',
+	params = {},
+	doc = [[
+An 8-bit signed integer.
+
+In Lua it is stored as a regular `number`. When serializing, overflows and loss or precisions are ignored.]],
+}, {
 	name = 'uint16',
 	params = {'endianness'},
 	doc = [[
@@ -272,10 +279,24 @@ A 16-bit unsigned integer. The `endianness` type parameters specifies the order 
 
 In Lua it is stored as a regular `number`. When serializing, overflows and loss or precisions are ignored.]],
 }, {
+	name = 'sint16',
+	params = {'endianness'},
+	doc = [[
+A 16-bit signed integer. The `endianness` type parameters specifies the order of bytes in the stream. It is a string which can be either `'le'` for little-endian (least significant byte comes first), or `'be'` for big-endian (most significant byte comes first).
+
+In Lua it is stored as a regular `number`. When serializing, overflows and loss or precisions are ignored.]],
+}, {
 	name = 'uint32',
 	params = {'endianness'},
 	doc = [[
 A 32-bit unsigned integer. The `endianness` type parameters specifies the order of bytes in the stream. It is a string which can be either `'le'` for little-endian (least significant byte comes first), or `'be'` for big-endian (most significant byte comes first).
+
+In Lua it is stored as a regular `number`. When serializing, overflows and loss or precisions are ignored.]],
+}, {
+	name = 'sint32',
+	params = {'endianness'},
+	doc = [[
+A 32-bit signed integer. The `endianness` type parameters specifies the order of bytes in the stream. It is a string which can be either `'le'` for little-endian (least significant byte comes first), or `'be'` for big-endian (most significant byte comes first).
 
 In Lua it is stored as a regular `number`. When serializing, overflows and loss or precisions are ignored.]],
 }, {
