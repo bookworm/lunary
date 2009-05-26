@@ -665,7 +665,7 @@ function read.double(stream, endianness)
 	else
 		error("unknown endianness")
 	end
-	local data,err = stream:receive(4)
+	local data,err = stream:receive(8)
 	if not data then
 		return nil,err
 	end
