@@ -41,6 +41,27 @@ end
 
 ------------------------------------------------------------------------------
 
+function serialize.sint8(value)
+	if value < -2^7 or value >= 2^7 or math.floor(value)~=value then
+		error("invalid value")
+	end
+	if value < 0 then
+		value = value + 2^8
+	end
+	return serialize.uint8(value)
+end
+
+function read.sint8(stream)
+	local value,err = read.uint8(stream)
+	if not value then return nil,err end
+	if value >= 2^7 then
+		value = value - 2^8
+	end
+	return value
+end
+
+------------------------------------------------------------------------------
+
 function serialize.uint16(value, endianness)
 	if value < 0 or value >= 2^16 or math.floor(value)~=value then
 		error("invalid value")
@@ -73,6 +94,27 @@ function read.uint16(stream, endianness)
 		error("unknown endianness")
 	end
 	return a * 256 + b
+end
+
+------------------------------------------------------------------------------
+
+function serialize.sint16(value, endianness)
+	if value < -2^15 or value >= 2^15 or math.floor(value)~=value then
+		error("invalid value")
+	end
+	if value < 0 then
+		value = value + 2 ^ 16
+	end
+	return serialize.uint16(value, endianness)
+end
+
+function read.sint16(stream, endianness)
+	local value,err = read.uint16(stream, endianness)
+	if not value then return nil,err end
+	if value >= 2^15 then
+		value = value - 2^16
+	end
+	return value
 end
 
 ------------------------------------------------------------------------------
@@ -116,6 +158,27 @@ function read.uint32(stream, endianness)
 		error("unknown endianness")
 	end
 	return ((a * 256 + b) * 256 + c) * 256 + d
+end
+
+------------------------------------------------------------------------------
+
+function serialize.sint32(value, endianness)
+	if value < -2^31 or value >= 2^31 or math.floor(value)~=value then
+		error("invalid value")
+	end
+	if value < 0 then
+		value = value + 2^32
+	end
+	return serialize.uint32(value, endianness)
+end
+
+function read.sint32(stream, endianness)
+	local value,err = read.uint32(stream, endianness)
+	if not value then return nil,err end
+	if value >= 2^31 then
+		value = value - 2^32
+	end
+	return value
 end
 
 ------------------------------------------------------------------------------

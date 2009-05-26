@@ -39,11 +39,29 @@ assert(serial.serialize.uint8(0x55)==string.char(0x55))
 assert(serial.serialize.uint8(0xaa)==string.char(0xaa))
 assert(serial.serialize.uint8(0xff)==string.char(0xff))
 
+assert(serial.serialize.sint8(-128)==string.char(0x80))
+assert(serial.serialize.sint8(-1)==string.char(0xff))
+assert(serial.serialize.sint8(0)==string.char(0x00))
+assert(serial.serialize.sint8(1)==string.char(0x01))
+assert(serial.serialize.sint8(127)==string.char(0x7f))
+
 assert(serial.serialize.uint16(0xbeef, 'le')==string.char(0xef, 0xbe))
 assert(serial.serialize.uint16(0xbeef, 'be')==string.char(0xbe, 0xef))
 
+assert(serial.serialize.sint16(-32768, 'be')==string.char(0x80, 0x00))
+assert(serial.serialize.sint16(-1, 'be')==string.char(0xff, 0xff))
+assert(serial.serialize.sint16(0, 'be')==string.char(0x00, 0x00))
+assert(serial.serialize.sint16(1, 'be')==string.char(0x00, 0x01))
+assert(serial.serialize.sint16(32767, 'be')==string.char(0x7f, 0xff))
+
 assert(serial.serialize.uint32(0xdeadbeef, 'le')==string.char(0xef, 0xbe, 0xad, 0xde))
 assert(serial.serialize.uint32(0xdeadbeef, 'be')==string.char(0xde, 0xad, 0xbe, 0xef))
+
+assert(serial.serialize.sint32(-2147483648, 'be')==string.char(0x80, 0x00, 0x00, 0x00))
+assert(serial.serialize.sint32(-1, 'be')==string.char(0xff, 0xff, 0xff, 0xff))
+assert(serial.serialize.sint32(0, 'be')==string.char(0x00, 0x00, 0x00, 0x00))
+assert(serial.serialize.sint32(1, 'be')==string.char(0x00, 0x00, 0x00, 0x01))
+assert(serial.serialize.sint32(2147483647, 'be')==string.char(0x7f, 0xff, 0xff, 0xff))
 
 assert(serial.serialize.uint64(0x0010feed * 2^32 + 0xdeadbeef, 'le')==string.char(0xef, 0xbe, 0xad, 0xde, 0xed, 0xfe, 0x10, 0x00))
 assert(serial.serialize.uint64(0x0010feed * 2^32 + 0xdeadbeef, 'be')==string.char(0x00, 0x10, 0xfe, 0xed, 0xde, 0xad, 0xbe, 0xef))
