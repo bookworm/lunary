@@ -90,6 +90,8 @@ Lunary is a framework to read and write structured binary data from and to files
 
 All built-in data types preserve all the information they read from the streams. This allows reserializing an object even if it's not manipulable by Lua (e.g. an `uint64` not fitting in a Lua `number` will be represented by a `string`, an `enum` which integer value is not named will be passed as a `number`). User application or custom formats are required to remove themselves any unnecessary information (invalid value, ordering of entries in a set or a map, etc.).
 
+Lunary name is based on the contraction of Lua and binary, and it sounds moon-themed (it is close to the lunar adjective).
+
 ## Support
 
 All support is done through the [Lua mailing list](http://www.lua.org/lua-l.html). If the traffic becomes too important a specialized mailing list will be created.
