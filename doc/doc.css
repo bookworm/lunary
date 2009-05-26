@@ -70,3 +70,8 @@ pre {
 pre {
 	font-size: 105% ;
 }
+
+ul li {
+	list-style-image: url(bullet.png) ;
+}
+
