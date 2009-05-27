@@ -360,7 +360,8 @@ function read.flags(stream, flagset, int_t, ...)
 	end
 	local value = {}
 	for k,v in pairs(flagset) do
-		if libbit.band(int, v) ~= 0 then
+		-- ignore reverse or invalid mappings (allows use of same dict in enums)
+		if type(v)=='number' and libbit.band(int, v) ~= 0 then
 			value[k] = true
 		end
 	end
