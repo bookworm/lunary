@@ -126,4 +126,5 @@ for _,test in ipairs(tests) do
 	assert(serial.read[test[1][1]](serial.buffer(test[3]), unpack(test[1], 2))~=nil, "could not deserialize value "..tostring(test[2]).." with type "..test[1][1]--[[..(#test[1]>1 and " ("..table.concat(test[1], ", ", 2, #test[1])..")" or "")]])
 end
 
+print("All tests passed successfully.")
 
