@@ -334,7 +334,9 @@ When reading, a single number is read according to `int_t`. Then, the data of ea
 	name = 'bytes',
 	params = {'count'},
 	doc = [[
-This is a simple constant-size byte sequence. The size is passed in the `count` type parameter. The data is a `string` in Lua. When serializing or writing, the string passed should have the proper length otherwise an error is thrown.]],
+This is a simple constant-size byte sequence. The size is passed in the `count` type parameter. The data is a `string` in Lua. When serializing or writing, the string passed should have the proper length otherwise an error is thrown.
+
+The `count` type parameter can have a special value, the string `'*'`. When serializing or writing, the input string is serialized as-is, in its full length. When reading though, since there is no way to know how many elements to read, the stream is read until its end. For that reason the stream must implement a `'length'` method, which returns the number of bytes remaining in the stream. Contrary to the `array` data type (see below), when using `'*'` with `bytes` the `length` method of the stream should be accurate, it should be 0 when the end of the stream is reached, and the actual number of remaining bytes otherwise.]],
 }, {
 	name = 'sizedbuffer',
 	params = {'size_t'},

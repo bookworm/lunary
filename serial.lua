@@ -679,11 +679,15 @@ end
 
 function serialize.bytes(value, count)
 	assert(type(value)=='string', "bytes value is not a string")
-	assert(#value==count, "byte string has not the correct length")
+	assert(#value==count or count=='*', "byte string has not the correct length")
 	return value
 end
 
 function read.bytes(stream, count)
+	if count=='*' then
+		assert(stream.length, "infinite arrays can only be read from buffers, not infinite streams")
+		count = stream:length()
+	end
 	local data,err = stream:receive(count)
 	if not data then return nil,err end
 	return data

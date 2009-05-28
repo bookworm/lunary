@@ -231,6 +231,8 @@ serial.read.struct(stream, attribute)
 
 <p>This is a simple constant-size byte sequence. The size is passed in the <code>count</code> type parameter. The data is a <code>string</code> in Lua. When serializing or writing, the string passed should have the proper length otherwise an error is thrown.</p>
 
+<p>The <code>count</code> type parameter can have a special value, the string <code>'*'</code>. When serializing or writing, the input string is serialized as-is, in its full length. When reading though, since there is no way to know how many elements to read, the stream is read until its end. For that reason the stream must implement a <code>'length'</code> method, which returns the number of bytes remaining in the stream. Contrary to the <code>array</code> data type (see below), when using <code>'*'</code> with <code>bytes</code> the <code>length</code> method of the stream should be accurate, it should be 0 when the end of the stream is reached, and the actual number of remaining bytes otherwise.</p>
+
 		</div>
 	<div class="function">
 	<h3><a name="sizedbuffer"><code>sizedbuffer ( size_t )</code></a></h3>
@@ -411,7 +413,7 @@ return serial.read.fstruct(stream, attribute)
 </div>
 
 <div class="chapter" id="footer">
-<small>Last update: 2009-05-26 18:49:51 CEST</small>
+<small>Last update: 2009-05-28 19:36:42 CEST</small>
 </div>
 
 </body>
