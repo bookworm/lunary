@@ -12,7 +12,7 @@ end
 
 local stream = serial.filestream(assert(io.open(pngname, "rb")))
 
-local png = serial.read.png_file(stream)
+local png = assert(serial.read.png_file(stream))
 
 util.dumptabletofile(png, luaname)
 
