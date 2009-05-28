@@ -69,6 +69,20 @@ local png_interlace_method = serial.util.enum{
 	adam7 = 1,
 }
 
+local png_standard_keywords = {
+	'Title',			-- Short (one line) title or caption for image
+	'Author',			-- Name of image's creator
+	'Description',		-- Description of image (possibly long)
+	'Copyright',		-- Copyright notice
+	'Creation Time',	-- Time of original image creation
+	'Software',			-- Software used to create the image
+	'Disclaimer',		-- Legal disclaimer
+	'Warning',			-- Warning of nature of content
+	'Source',			-- Device used to create the image
+	'Comment',			-- Miscellaneous comment; conversion from GIF comment
+}
+
+
 ------------------------------------------------------------------------------
 
 function fstruct.png_file(self)
@@ -87,7 +101,9 @@ function read.png_chunk(stream)
 	assert(crc(type..data)==chunk_crc, "invalid chunk CRC")
 	local read = read["png_"..type.."_chunk"]
 	if read then
-		data = read(serial.buffer(data))
+		local err
+		data,err = read(serial.buffer(data))
+		if not data then return nil,err end
 	end
 	return {
 		type = type,
@@ -105,5 +121,81 @@ struct.png_IHDR_chunk = {
 	{'interlace_method',	'enum', png_interlace_method, 'uint8'},
 }
 
+struct.png_PLTE_color = {
+	{'red',		'uint8'},
+	{'green',	'uint8'},
+	{'blue',	'uint8'},
+}
+
+alias.png_PLTE_chunk = {'array', '*', 'png_PLTE_color'}
+
+--alias.png_IDAT_chunk = {'bytes', '*'}
+
 struct.png_IEND_chunk = {}
+
+--struct.png_tRNS_chunk = {}
+
+function read.scaled(stream, scale, int_t, ...)
+	if type(int_t)~='table' or select('#', ...)>=1 then
+		int_t = {int_t, ...}
+	end
+	local read = assert(read[int_t[1]], "unknown int type "..tostring(int_t[1]).."")
+	local value,err = read(stream, unpack(int_t, 2))
+	if not value then return nil,err end
+	return value / scale
+end
+
+function serialize.scaled(value, scale, int_t, ...)
+	if type(int_t)~='table' or select('#', ...)>=1 then
+		int_t = {int_t, ...}
+	end
+	local serialize = assert(serialize[int_t[1]], "unknown int type "..tostring(int_t[1]).."")
+	return serialize(value * 100000, unpack(int_t, 2))
+end
+
+alias.png_gAMA_chunk = {'scaled', 100000, 'uint32', 'be'}
+
+struct.png_cHRM_chunk = {
+	{'white_point_x', 'scaled', 100000, 'uint32', 'be'},
+	{'white_point_y', 'scaled', 100000, 'uint32', 'be'},
+	{'red_x', 'scaled', 100000, 'uint32', 'be'},
+	{'red_y', 'scaled', 100000, 'uint32', 'be'},
+	{'green_x', 'scaled', 100000, 'uint32', 'be'},
+	{'green_y', 'scaled', 100000, 'uint32', 'be'},
+	{'blue_x', 'scaled', 100000, 'uint32', 'be'},
+	{'blue_y', 'scaled', 100000, 'uint32', 'be'},
+}
+
+--struct.png_sRGB_chunk = {}
+--struct.png_iCCP_chunk = {}
+
+struct.png_iTXt_chunk = {
+	{'keyword',				'cstring'},
+	{'compression_flag',	'uint8'},
+	{'compression_method',	'uint8'},
+	{'language_tag',		'cstring'},
+	{'translated_keyword',	'cstring'},
+	{'text',				'bytes', '*'},
+}
+
+struct.png_tEXt_chunk = {
+	{'keyword', 'cstring'},
+	{'text', 'bytes', '*'},
+}
+
+--struct.png_zTXt_chunk = {}
+--struct.png_bKGD_chunk = {}
+--struct.png_pHYs_chunk = {}
+--struct.png_sBIT_chunk = {}
+--struct.png_sPLT_chunk = {}
+--struct.png_hIST_chunk = {}
+
+struct.png_tIME_chunk = {
+	{'year',	'uint16', 'be'},
+	{'month',	'uint8'},
+	{'day',		'uint8'},
+	{'hour',	'uint8'},
+	{'minute',	'uint8'},
+	{'second',	'uint8'},
+}
 
