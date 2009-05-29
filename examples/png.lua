@@ -89,26 +89,42 @@ function fstruct.png_file(self)
 	self 'signature' ('bytes', 8)
 	assert(self.signature==string.char(137, 80, 78, 71, 13, 10, 26, 10), "invalid PNG signature")
 	self 'chunks' ('array', '*', 'png_chunk')
-	assert(self.chunks[1].type=='IHDR', "first chunk shoud be an IHDR")
-	assert(self.chunks[#self.chunks].type=='IEND', "last chunk shoud be an IEND")
+end
+
+function fstruct.png_chunk_raw(self)
+	self 'length' ('uint32', 'be')
+	self 'type' ('bytes', 4)
+	self 'data' ('bytes', self.length)
+	self 'crc' ('bytes', 4)
 end
 
 function read.png_chunk(stream)
-	local length = read.uint32(stream, 'be')
-	local type = read.bytes(stream, 4)
-	local data = read.bytes(stream, length)
-	local chunk_crc = read.bytes(stream, 4)
-	assert(crc(type..data)==chunk_crc, "invalid chunk CRC")
-	local read = read["png_"..type.."_chunk"]
-	if read then
+	local raw = read.png_chunk_raw(stream)
+	assert(crc(raw.type..raw.data)==raw.crc, "invalid chunk CRC")
+	local read_data = read["png_"..raw.type.."_chunk"]
+	if read_data then
 		local err
-		data,err = read(serial.buffer(data))
-		if not data then return nil,err end
+		raw.data,err = read_data(serial.buffer(raw.data))
+		if not raw.data then return nil,err end
 	end
 	return {
-		type = type,
-		data = data,
+		type = raw.type,
+		data = raw.data,
 	}
+end
+
+function serialize.png_chunk(chunk)
+	local raw,err = {}
+	raw.type = chunk.type
+	raw.data = chunk.data
+	local serialize_data = serialize["png_"..raw.type.."_chunk"]
+	if serialize_data then
+		raw.data,err = serialize_data(raw.data)
+		if not raw.data then return nil,err end
+	end
+	raw.length = #raw.data
+	raw.crc = crc(raw.type..raw.data)
+	return serialize.png_chunk_raw(raw)
 end
 
 struct.png_IHDR_chunk = {
