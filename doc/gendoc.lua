@@ -522,7 +522,29 @@ io.output(file_examples)
 header()
 
 chapter('<a name="examples">Examples</a>', [[
-No educative examples are yet available for Lunary, but it is already used to read and write .met files (the ones used by various ed2k P2P clients) by the ed2k-ltools software suite. Data types describing these file formats are available in the [`serial/met.lua` file](http://piratery.net/hg/ed2k-ltools/raw-file/tip/met-ltools/serial/met.lua).]])
+Here are some examples file descriptions using Lunary.
+
+---
+
+## %chapterid%.1 - PNG file format
+
+[png.lua](examples/png.lua) contains a partial description of the PNG file format. It can parse the chunk structure, and some chunk content (like embedded texts), but not actual image data. Two helpers scripts allow converting PNG files to and from Lua, [png2lua](examples/png2lua) and [lua2png](examples/lua2png) respectively.
+
+---
+
+## %chapterid%.2 - RIFF file format
+
+[riff.lua](examples/png.lua) contains a partial description of the RIFF file format. It can parse the chunk structure, and some chunk content from WAV or AVI files (like embedded texts), but not actual sound or video data. Two helpers scripts allow converting RIFF files to and from Lua, [riff2lua](examples/riff2lua) and [lua2riff](examples/lua2riff) respectively.
+
+---
+
+## %chapterid%.3 - ed2k .met files
+
+Not shipped with this project, but available online is a description of met files used by popular eDonkey2000 clients like [eMule](http://www.emule-project.net/). It is more complex than the examples above, but they are more complete, in two senses. They use almost all built-in Lunary data types. They are also complete in the sense that they describe *all* fields of supported .met files. It is therefore possible to generate .met files from scratch using that library.
+
+The [serial/met.lua](http://piratery.net/trac/ed2k-ltools/browser/met-ltools/serial/met.lua) file describes all the .met files formats. The [met2lua](http://piratery.net/trac/ed2k-ltools/browser/met-ltools/met2lua) script can convert met files to a Lua equivalent and vice-versa.
+
+]])
 
 footer()
 

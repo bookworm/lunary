@@ -25,11 +25,33 @@ lang="en">
 <div class="chapter">
 <h1>5 - <a name="examples">Examples</a></h1>
 
-<p>No educative examples are yet available for Lunary, but it is already used to read and write .met files (the ones used by various ed2k P2P clients) by the ed2k-ltools software suite. Data types describing these file formats are available in the <a href="http://piratery.net/hg/ed2k-ltools/raw-file/tip/met-ltools/serial/met.lua"><code>serial/met.lua</code> file</a>.</p>
+<p>Here are some examples file descriptions using Lunary.</p>
+
+<hr/>
+
+<h2>5.1 - PNG file format</h2>
+
+<p><a href="examples/png.lua">png.lua</a> contains a partial description of the PNG file format. It can parse the chunk structure, and some chunk content (like embedded texts), but not actual image data. Two helpers scripts allow converting PNG files to and from Lua, <a href="examples/png2lua">png2lua</a> and <a href="examples/lua2png">lua2png</a> respectively.</p>
+
+<hr/>
+
+<h2>5.2 - RIFF file format</h2>
+
+<p><a href="examples/png.lua">riff.lua</a> contains a partial description of the RIFF file format. It can parse the chunk structure, and some chunk content from WAV or AVI files (like embedded texts), but not actual sound or video data. Two helpers scripts allow converting RIFF files to and from Lua, <a href="examples/riff2lua">riff2lua</a> and <a href="examples/lua2riff">lua2riff</a> respectively.</p>
+
+<hr/>
+
+<h2>5.3 - ed2k .met files</h2>
+
+<p>Not shipped with this project, but available online is a description of met files used by popular eDonkey2000 clients like <a href="http://www.emule-project.net/">eMule</a>. It is more complex than the examples above, but they are more complete, in two senses. They use almost all built-in Lunary data types. They are also complete in the sense that they describe <em>all</em> fields of supported .met files. It is therefore possible to generate .met files from scratch using that library.</p>
+
+<p>The <a href="http://piratery.net/trac/ed2k-ltools/browser/met-ltools/serial/met.lua">serial/met.lua</a> file describes all the .met files formats. The <a href="http://piratery.net/trac/ed2k-ltools/browser/met-ltools/met2lua">met2lua</a> script can convert met files to a Lua equivalent and vice-versa.</p>
+
+
 </div>
 
 <div class="chapter" id="footer">
-<small>Last update: 2009-05-26 02:54:56 CEST</small>
+<small>Last update: 2009-05-31 02:57:01 CEST</small>
 </div>
 
 </body>
