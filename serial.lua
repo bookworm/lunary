@@ -20,49 +20,73 @@ end
 -- function write.typename(stream, value, typeparams...) return true end
 -- function read.typename(stream, typeparams...) return value end
 
+local err_stack = {}
+local function push(x)
+	err_stack[#err_stack+1] = x
+end
+local function pop()
+	err_stack[#err_stack] = nil
+end
+local function ioerror(msg)
+	local t = {}
+	for i=#err_stack,1,-1 do
+		t[#t+1] = err_stack[i]
+	end
+	local str = "io error:\n\tin "..table.concat(t, "\n\tin ").."\nwith message: "..msg
+	err_stack = {}
+	return str
+end
+
 ------------------------------------------------------------------------------
 
 function serialize.uint8(value)
+	push 'uint8'
 	local a = value
 	if value < 0 or value >= 2^8 or math.floor(value)~=value then
 		error("invalid value")
 	end
 	local data = string.char(a)
+	pop()
 	return data
 end
 
 function read.uint8(stream)
+	push 'uint8'
 	local data,err = stream:receive(1)
-	if not data then
-		return nil,err
-	end
+	if not data then return nil,ioerror(err) end
+	pop()
 	return string.byte(data)
 end
 
 ------------------------------------------------------------------------------
 
 function serialize.sint8(value)
+	push 'sint8'
 	if value < -2^7 or value >= 2^7 or math.floor(value)~=value then
 		error("invalid value")
 	end
 	if value < 0 then
 		value = value + 2^8
 	end
+	pop()
 	return serialize.uint8(value)
 end
 
 function read.sint8(stream)
+	push 'sint8'
 	local value,err = read.uint8(stream)
 	if not value then return nil,err end
 	if value >= 2^7 then
 		value = value - 2^8
 	end
+	pop()
 	return value
 end
 
 ------------------------------------------------------------------------------
 
 function serialize.uint16(value, endianness)
+	push 'uint16'
 	if value < 0 or value >= 2^16 or math.floor(value)~=value then
 		error("invalid value")
 	end
@@ -77,14 +101,14 @@ function serialize.uint16(value, endianness)
 	else
 		error("unknown endianness")
 	end
+	pop()
 	return data
 end
 
 function read.uint16(stream, endianness)
+	push 'uint16'
 	local data,err = stream:receive(2)
-	if not data then
-		return nil,err
-	end
+	if not data then return nil,ioerror(err) end
 	local a,b
 	if endianness=='le' then
 		b,a = string.byte(data, 1, 2)
@@ -93,33 +117,39 @@ function read.uint16(stream, endianness)
 	else
 		error("unknown endianness")
 	end
+	pop()
 	return a * 256 + b
 end
 
 ------------------------------------------------------------------------------
 
 function serialize.sint16(value, endianness)
+	push 'sint16'
 	if value < -2^15 or value >= 2^15 or math.floor(value)~=value then
 		error("invalid value")
 	end
 	if value < 0 then
 		value = value + 2 ^ 16
 	end
+	pop()
 	return serialize.uint16(value, endianness)
 end
 
 function read.sint16(stream, endianness)
+	push 'sint16'
 	local value,err = read.uint16(stream, endianness)
 	if not value then return nil,err end
 	if value >= 2^15 then
 		value = value - 2^16
 	end
+	pop()
 	return value
 end
 
 ------------------------------------------------------------------------------
 
 function serialize.uint32(value, endianness)
+	push 'uint32'
 	if type(value)~='number' then
 		error("bad argument #1 to serialize.uint32 (number expected, got "..type(value)..")", 2)
 	end
@@ -141,14 +171,14 @@ function serialize.uint32(value, endianness)
 	else
 		error("unknown endianness")
 	end
+	pop()
 	return data
 end
 
 function read.uint32(stream, endianness)
+	push 'uint32'
 	local data,err = stream:receive(4)
-	if not data then
-		return nil,err
-	end
+	if not data then return nil,ioerror(err) end
 	local a,b,c,d
 	if endianness=='le' then
 		d,c,b,a = string.byte(data, 1, 4)
@@ -157,27 +187,34 @@ function read.uint32(stream, endianness)
 	else
 		error("unknown endianness")
 	end
+	pop()
 	return ((a * 256 + b) * 256 + c) * 256 + d
 end
 
 ------------------------------------------------------------------------------
 
 function serialize.sint32(value, endianness)
+	push 'sint32'
 	if value < -2^31 or value >= 2^31 or math.floor(value)~=value then
 		error("invalid value")
 	end
 	if value < 0 then
 		value = value + 2^32
 	end
-	return serialize.uint32(value, endianness)
+	local value,err = serialize.uint32(value, endianness)
+	if not value then return nil,err end
+	pop()
+	return value
 end
 
 function read.sint32(stream, endianness)
+	push 'sint32'
 	local value,err = read.uint32(stream, endianness)
 	if not value then return nil,err end
 	if value >= 2^31 then
 		value = value - 2^32
 	end
+	pop()
 	return value
 end
 
@@ -222,6 +259,7 @@ do
 end
 
 function serialize.uint64(value, endianness)
+	push 'uint64'
 	local data
 	local tvalue = type(value)
 	if tvalue=='number' then
@@ -263,14 +301,14 @@ function serialize.uint64(value, endianness)
 	else
 		error("uint64 value must be a number or a string")
 	end
+	pop()
 	return data
 end
 
 function read.uint64(stream, endianness)
+	push 'uint64'
 	local data,err = stream:receive(8)
-	if not data then
-		return nil,err
-	end
+	if not data then return nil,ioerror(err) end
 	local a,b,c,d,e,f,g,h
 	if endianness=='le' then
 		h,g,f,e,d,c,b,a = string.byte(data, 1, 8)
@@ -280,21 +318,25 @@ function read.uint64(stream, endianness)
 		error("unknown endianness")
 	end
 	local ma,mb,mc,md,me,mf,mg,mh = unpack(maxbytes.uint64)
+	local value
 	if a>ma or b>mb or c>mc or d>md or e>me or f>mf or g>mg or h>mh then
 		-- uint64 as string is little-endian
 		if endianness=='le' then
-			return data
+			value = data
 		else
-			return data:reverse()
+			value = data:reverse()
 		end
 	else
-		return ((((((a * 256 + b) * 256 + c) * 256 + d) * 256 + e) * 256 + f) * 256 + g) * 256 + h
+		value = ((((((a * 256 + b) * 256 + c) * 256 + d) * 256 + e) * 256 + f) * 256 + g) * 256 + h
 	end
+	pop()
+	return value
 end
 
 ------------------------------------------------------------------------------
 
 function serialize.enum(value, enum, int_t, ...)
+	push 'enum'
 	if type(int_t)~='table' or select('#', ...)>=1 then
 		int_t = {int_t, ...}
 	end
@@ -308,10 +350,12 @@ function serialize.enum(value, enum, int_t, ...)
 	local serialize = assert(serialize[int_t[1]], "unknown integer type "..tostring(int_t[1]).."")
 	local sdata,err = serialize(ivalue, unpack(int_t, 2))
 	if not sdata then return nil,err end
+	pop()
 	return sdata
 end
 
 function read.enum(stream, enum, int_t, ...)
+	push 'enum'
 	if type(int_t)~='table' or select('#', ...)>=1 then
 		int_t = {int_t, ...}
 	end
@@ -325,6 +369,7 @@ function read.enum(stream, enum, int_t, ...)
 		warning("unknown enum number "..tostring(value)..", keeping numerical value")
 		svalue = value
 	end
+	pop()
 	return svalue
 end
 
@@ -334,6 +379,7 @@ local success,libbit = pcall(require, 'bit')
 if success then
 
 function serialize.flags(value, flagset, int_t, ...)
+	push 'flags'
 	if type(int_t)~='table' or select('#', ...)>=1 then
 		int_t = {int_t, ...}
 	end
@@ -346,10 +392,12 @@ function serialize.flags(value, flagset, int_t, ...)
 	local serialize = assert(serialize[int_t[1]], "unknown integer type "..tostring(int_t[1]).."")
 	local sdata,err = serialize(value, unpack(int_t, 2))
 	if not sdata then return nil,err end
+	pop()
 	return sdata
 end
 
 function read.flags(stream, flagset, int_t, ...)
+	push 'flags'
 	if type(int_t)~='table' or select('#', ...)>=1 then
 		int_t = {int_t, ...}
 	end
@@ -365,6 +413,7 @@ function read.flags(stream, flagset, int_t, ...)
 			value[k] = true
 		end
 	end
+	pop()
 	return value
 end
 
@@ -373,6 +422,7 @@ end
 ------------------------------------------------------------------------------
 
 function serialize.sizedbuffer(value, size_t, ...)
+	push 'sizedbuffer'
 	if type(size_t)~='table' or select('#', ...)>=1 then
 		size_t = {size_t, ...}
 	end
@@ -380,10 +430,12 @@ function serialize.sizedbuffer(value, size_t, ...)
 	local size = #value
 	local ssize,err = serialize(size, unpack(size_t, 2))
 	if not ssize then return nil,err end
+	pop()
 	return ssize .. value
 end
 
 function read.sizedbuffer(stream, size_t, ...)
+	push 'sizedbuffer'
 	if type(size_t)~='table' or select('#', ...)>=1 then
 		size_t = {size_t, ...}
 	end
@@ -394,13 +446,15 @@ function read.sizedbuffer(stream, size_t, ...)
 		assert(stream:length() >= size, "invalid sizedbuffer size, stream is too short")
 	end
 	local value,err = stream:receive(size)
-	if not value then return nil,err end
+	if not value then return nil,ioerror(err) end
+	pop()
 	return value
 end
 
 ------------------------------------------------------------------------------
 
 function serialize.array(value, size, value_t, ...)
+	push 'array'
 	if type(value_t)~='table' or select('#', ...)>=1 then
 		value_t = {value_t, ...}
 	end
@@ -415,10 +469,12 @@ function serialize.array(value, size, value_t, ...)
 		if not temp then return nil,err end
 		data = data .. temp
 	end
+	pop()
 	return data
 end
 
 function write.array(stream, value, size, value_t, ...)
+	push 'array'
 	if type(value_t)~='table' or select('#', ...)>=1 then
 		value_t = {value_t, ...}
 	end
@@ -431,10 +487,12 @@ function write.array(stream, value, size, value_t, ...)
 		local success,err = write(stream, value[i], unpack(value_t, 2))
 		if not success then return nil,err end
 	end
+	pop()
 	return true
 end
 
 function read.array(stream, size, value_t, ...)
+	push 'array'
 	if type(value_t)~='table' or select('#', ...)>=1 then
 		value_t = {value_t, ...}
 	end
@@ -454,12 +512,14 @@ function read.array(stream, size, value_t, ...)
 			value[i] = elem
 		end
 	end
+	pop()
 	return value
 end
 
 ------------------------------------------------------------------------------
 
 function serialize.sizedvalue(value, size_t, value_t, ...)
+	push 'sizedvalue'
 	if type(value_t)~='table' or select('#', ...)>=1 then
 		value_t = {value_t, ...}
 	end
@@ -480,10 +540,12 @@ function serialize.sizedvalue(value, size_t, value_t, ...)
 	local size = #svalue
 	local ssize,err = size_serialize(size, unpack(size_t, 2))
 	if not ssize then return nil,err end
+	pop()
 	return ssize .. svalue
 end
 
 function read.sizedvalue(stream, size_t, value_t, ...)
+	push 'sizedvalue'
 	if type(value_t)~='table' or select('#', ...)>=1 then
 		value_t = {value_t, ...}
 	end
@@ -499,7 +561,7 @@ function read.sizedvalue(stream, size_t, value_t, ...)
 	if not size then return nil,err end
 	-- read serialized value
 	local svalue,err = stream:receive(size)
-	if not svalue then return nil,err end
+	if not svalue then return nil,ioerror(err) end
 	-- build a buffer stream
 	local bvalue = _M.buffer(svalue)
 	-- read the value from the buffer
@@ -515,12 +577,14 @@ function read.sizedvalue(stream, size_t, value_t, ...)
 			error(msg)
 		end
 	end
+	pop()
 	return value
 end
 
 ------------------------------------------------------------------------------
 
 function serialize.sizedarray(value, size_t, value_t, ...)
+	push 'sizedarray'
 	if type(value_t)~='table' or select('#', ...)>=1 then
 		value_t = {value_t, ...}
 	end
@@ -541,10 +605,12 @@ function serialize.sizedarray(value, size_t, value_t, ...)
 	if not temp then return nil,err end
 	data = data .. temp
 	-- return size..array
+	pop()
 	return data
 end
 
 function write.sizedarray(stream, value, size_t, value_t, ...)
+	push 'sizedarray'
 	if type(value_t)~='table' or select('#', ...)>=1 then
 		value_t = {value_t, ...}
 	end
@@ -563,10 +629,12 @@ function write.sizedarray(stream, value, size_t, value_t, ...)
 	success,err = write.array(stream, value, size, unpack(value_t))
 	if not success then return nil,err end
 	-- return success
+	pop()
 	return true
 end
 
 function read.sizedarray(stream, size_t, value_t, ...)
+	push 'sizedarray'
 	if type(value_t)~='table' or select('#', ...)>=1 then
 		value_t = {value_t, ...}
 	end
@@ -583,22 +651,27 @@ function read.sizedarray(stream, size_t, value_t, ...)
 	local value,err = read.array(stream, size, unpack(value_t))
 	if not value then return nil,err end
 	-- return array
+	pop()
 	return value
 end
 
 ------------------------------------------------------------------------------
 
 function serialize.cstring(value)
+	push 'cstring'
 	assert(not value:find('\0'), "cannot serialize a string containing embedded zeros as a C string")
+	pop()
 	return value..'\0'
 end
 
 function read.cstring(stream)
+	push 'cstring'
 	local bytes = {}
 	repeat
 		local byte = read.uint8(stream)
 		bytes[#bytes+1] = byte
 	until byte==0
+	pop()
 	return string.char(unpack(bytes, 1, #bytes-1)) -- remove trailing 0
 end
 
@@ -608,6 +681,7 @@ local success,libstruct = pcall(require, 'struct')
 if success then
 
 function serialize.float(value, endianness)
+	push 'float'
 	local format
 	if endianness=='le' then
 		format = "<f"
@@ -620,10 +694,12 @@ function serialize.float(value, endianness)
 	if #data ~= 4 then
 		error("struct library \"f\" format doesn't correspond to a 32 bits float")
 	end
+	pop()
 	return data
 end
 
 function read.float(stream, endianness)
+	push 'float'
 	local format
 	if endianness=='le' then
 		format = "<f"
@@ -633,15 +709,15 @@ function read.float(stream, endianness)
 		error("unknown endianness")
 	end
 	local data,err = stream:receive(4)
-	if not data then
-		return nil,err
-	end
+	if not data then return nil,ioerror(err) end
+	pop()
 	return libstruct.unpack(format, data)
 end
 
 ------------------------------------------------------------------------------
 
 function serialize.double(value, endianness)
+	push 'double'
 	local format
 	if endianness=='le' then
 		format = "<d"
@@ -654,10 +730,12 @@ function serialize.double(value, endianness)
 	if #data ~= 8 then
 		error("struct library \"f\" format doesn't correspond to a 64 bits float")
 	end
+	pop()
 	return data
 end
 
 function read.double(stream, endianness)
+	push 'double'
 	local format
 	if endianness=='le' then
 		format = "<d"
@@ -667,10 +745,11 @@ function read.double(stream, endianness)
 		error("unknown endianness")
 	end
 	local data,err = stream:receive(8)
-	if not data then
-		return nil,err
-	end
-	return libstruct.unpack(format, data)
+	if not data then return nil,ioerror(err) end
+	local value,err = libstruct.unpack(format, data)
+	if not value then return nil,err end
+	pop()
+	return value
 end
 
 end
@@ -678,39 +757,48 @@ end
 ------------------------------------------------------------------------------
 
 function serialize.bytes(value, count)
+	push 'bytes'
 	assert(type(value)=='string', "bytes value is not a string")
 	assert(#value==count or count=='*', "byte string has not the correct length")
+	pop()
 	return value
 end
 
 function read.bytes(stream, count)
+	push 'bytes'
 	if count=='*' then
 		assert(stream.length, "infinite arrays can only be read from buffers, not infinite streams")
 		count = stream:length()
 	end
 	local data,err = stream:receive(count)
-	if not data then return nil,err end
+	if not data then return nil,ioerror(err) end
+	pop()
 	return data
 end
 
 ------------------------------------------------------------------------------
 
 function serialize.bytes2hex(value, count)
+	push 'bytes2hex'
 	assert(type(value)=='string', "bytes2hex value is not a string")
 	value = util.hex2bin(value)
 	assert(#value==count, "byte string has not the correct length")
+	pop()
 	return value
 end
 
 function read.bytes2hex(stream, count)
+	push 'bytes2hex'
 	local value,err = stream:receive(count)
-	if not value then return value,err end
+	if not value then return value,ioerror(err) end
+	pop()
 	return util.bin2hex(value)
 end
 
 ------------------------------------------------------------------------------
 
 function serialize.bytes2base32(value, count)
+	push 'bytes2base32'
 	assert(type(value)=='string', "bytes2base32 value is not a string")
 	value = util.base322bin(value)
 	assert(#value==count, "byte string has not the correct length")
@@ -718,14 +806,17 @@ function serialize.bytes2base32(value, count)
 end
 
 function read.bytes2base32(stream, count)
+	push 'bytes2base32'
 	local value,err = stream:receive(count)
-	if not value then return value,err end
+	if not value then return value,ioerror(err) end
+	pop()
 	return util.bin2base32(value)
 end
 
 ------------------------------------------------------------------------------
 
 function serialize.boolean(value, int_t, ...)
+	push 'boolean'
 	if type(int_t)~='table' or select('#', ...)>=1 then
 		int_t = {int_t, ...}
 	end
@@ -735,33 +826,36 @@ function serialize.boolean(value, int_t, ...)
 	local serialize = assert(serialize[int_t[1]], "unknown integer type "..tostring(int_t[1]).."")
 	local sdata,err = serialize(value, unpack(int_t, 2))
 	if not sdata then return nil,err end
+	pop()
 	return sdata
 end
 
 function read.boolean(stream, int_t, ...)
+	push 'boolean'
 	if type(int_t)~='table' or select('#', ...)>=1 then
 		int_t = {int_t, ...}
 	end
 	local read = assert(read[int_t[1]], "unknown integer type "..tostring(int_t[1]).."")
 	local value,err = read(stream, unpack(int_t, 2))
-	if not value then
-		return nil,err
-	end
+	if not value then return nil,err end
+	local result
 	if value==0 then
-		return false
+		result = false
 	elseif value==1 then
-		return true
+		result = true
 	else
 		warning("boolean value is not 0 or 1, it's "..tostring(value))
-		return value
+		result = value
 	end
+	pop()
+	return result
 end
 
 alias.boolean8 = {'boolean', 'uint8'}
 
 ------------------------------------------------------------------------------
 
-function serialize.struct(value, fields)
+function serialize._struct(value, fields)
 	local data = ""
 	for _,field in ipairs(fields) do
 		local name,type = field[1],field[2]
@@ -770,6 +864,14 @@ function serialize.struct(value, fields)
 		if not temp then return nil,err end
 		data = data .. temp
 	end
+	return data
+end
+
+function serialize.struct(value, fields)
+	push 'struct'
+	local data,err = serialize._struct(value, fields)
+	if data==nil then return nil,err end
+	pop()
 	return data
 end
 
@@ -784,15 +886,33 @@ function write.struct(stream, value, fields)
 	return true
 end
 
-function read.struct(stream, fields)
+function write.struct(stream, value, fields)
+	push 'struct'
+	local success,err = write._struct(stream, value, fields)
+	if not success then return nil,err end
+	pop()
+	return true
+end
+
+function read._struct(stream, fields)
 	local object = {}
 	for _,field in ipairs(fields) do
 		local name,type = field[1],field[2]
+		push(name)
 		local read = assert(read[type], "no function to read field of type "..tostring(type))
 		local value,err = read(stream, select(3, unpack(field)))
 		if value==nil then return nil,err end
 		object[name] = value
+		pop()
 	end
+	return object
+end
+
+function read.struct(stream, fields)
+	push 'struct'
+	local object,err = read._struct(stream, fields)
+	if not object then return nil,err end
+	pop()
 	return object
 end
 
@@ -802,6 +922,7 @@ local cyield = coroutine.yield
 local cwrap,unpack = coroutine.wrap,unpack
 
 function serialize.fstruct(object, f, ...)
+	push 'fstruct'
 	local params = {n=select('#', ...), ...}
 	local str = ""
 	local wrapper = setmetatable({}, {
@@ -832,10 +953,12 @@ function serialize.fstruct(object, f, ...)
 	end)
 	local success,err = coro()
 	if not success then return nil,err end
+	pop()
 	return str
 end
 
 function write.fstruct(stream, object, f, ...)
+	push 'fstruct'
 	local params = {n=select('#', ...), ...}
 	local wrapper = setmetatable({}, {
 		__index = object,
@@ -863,10 +986,12 @@ function write.fstruct(stream, object, f, ...)
 	end)
 	local success,err = coro()
 	if not success then return nil,err end
+	pop()
 	return true
 end
 
 function read.fstruct(stream, f, ...)
+	push 'fstruct'
 	local params = {n=select('#', ...), ...}
 	local object = {}
 	local wrapper = setmetatable({}, {
@@ -897,6 +1022,7 @@ function read.fstruct(stream, f, ...)
 	end)
 	local success,err = coro()
 	if not success then return nil,err end
+	pop()
 	return object
 end
 
@@ -949,7 +1075,11 @@ setmetatable(read, {__index=function(self,k)
 	local struct = struct[k]
 	if struct then
 		local read = function(stream)
-			return _M.read.struct(stream, struct)
+			push("struct<"..tostring(k)..">")
+			local value,err = _M.read._struct(stream, struct)
+			if value==nil then return nil,err end
+			pop()
+			return value
 		end
 		self[k] = read
 		return read
@@ -981,7 +1111,11 @@ setmetatable(write, {__index=function(self,k)
 	local struct = struct[k]
 	if struct then
 		local write = function(stream, object)
-			return select(1, _M.write.struct(stream, object, struct))
+			push("struct<"..tostring(k)..">")
+			local result,err = _M.write.struct(stream, object, struct)
+			if not result then return nil,err end
+			pop()
+			return result
 		end
 		local wrapper = util.wrap("write."..k, write)
 		self[k] = wrapper
@@ -1016,7 +1150,9 @@ setmetatable(write, {__index=function(self,k)
 			if not data then
 				return nil,err
 			end
-			return stream:send(data)
+			local success,err = stream:send(data)
+			if not success then return nil,ioerror(err) end
+			return true
 		end
 		self[k] = write
 		return write
