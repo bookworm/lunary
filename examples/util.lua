@@ -25,8 +25,22 @@ function dumppair(table, file, level, k, v)
 	success,err = file:write(assignment)
 	if not success then return nil,err end
 	if type(v)=='string' then
-		success,err = file:write((string.format('%q', v):gsub("\t", "\\t"):gsub("\\\n", "\\n")))
-		if not success then return nil,err end
+		if #v > 256 then
+			local t = {}
+			local chunksize = 32
+			for i=1,#v,chunksize do
+				t[#t+1] = v:sub(i,i+chunksize-1)
+			end
+			success,err = file:write("table.concat{\n")
+			if not success then return nil,err end
+			success,err = dumptable(t, file, level+1)
+			if not success then return nil,err end
+			success,err = file:write(("\t"):rep(level).."}")
+			if not success then return nil,err end
+		else
+			success,err = file:write((string.format('%q', v):gsub("\t", "\\t"):gsub("\\\n", "\\n"):gsub('[\001-\031]', function(c) return '\\'..string.byte(c) end)))
+			if not success then return nil,err end
+		end
 	elseif type(v)=='number' then
 		success,err = file:write(v)
 		if not success then return nil,err end
