@@ -392,7 +392,11 @@ function serialize.flags(value, flagset, int_t, ...)
 		assert(k==true, "flag has value other than true ("..tostring(k)..")")
 		ints[#ints+1] = flagset[flag]
 	end
-	value = libbit.bor(unpack(ints))
+	if #ints==0 then
+		value = 0
+	else
+		value = libbit.bor(unpack(ints))
+	end
 	local serialize = assert(serialize[int_t[1]], "unknown integer type "..tostring(int_t[1]).."")
 	local sdata,err = serialize(value, unpack(int_t, 2))
 	if not sdata then return nil,err end
