@@ -259,9 +259,13 @@ serial.read.struct(stream, attribute)
 	<div class="function">
 	<h3><a name="sizedvalue"><code>sizedvalue ( size_t, value_t )</code></a></h3>
 
-<p>This data type consist of the concatenation of another value and its size. In the stream the size is stored first, according to the <code>size_t</code> type descriptor. It is followed by the value, described by <code>value_t</code>.</p>
+<p>This data type has two modes, depending on the <code>size_t</code> type parameter.</p>
 
-<p>However this type has to be handled with care. When serializing, the value has to be serialized in its entirety before being returned or written, so that its size can be computed. This means its serialized version will exist completely in memory.</p>
+<p>If the <code>size_t</code> type parameter is a type descriptor, this data type consist of the concatenation of another value and its size. In the stream the size is stored first, according to the <code>size_t</code> type descriptor. It is followed by the value, described by <code>value_t</code>.</p>
+
+<p>If the <code>size_t</code> type parameter is a number, it is interpreted as the constant size of another value. In the stream, only the other value is serialized, according to the <code>value_t</code> type descriptor. On write, the value is first completely serialized to check that its size matches <code>size_t</code>. On read, <code>size_t</code> bytes are first read, and the value is deserialized from these bytes.</p>
+
+<p>This type has to be handled with care. When serializing, the value has to be serialized in its entirety before being returned or written, so that its size can be computed. This means its serialized version will exist completely in memory.</p>
 
 <p>On the other hand, when reading the value, the whole serialized value is first read into a temporary memory buffer. Then, when deserializing the value itself, it is deserialized from a temporary buffer stream created on the fly, which have a length method, and so even if the stream from which the <code>sizedvalue</code> is read hasn't one. This means the value can have a pseudo-infinite data type (like the <code>array</code> type with a <code>'*'</code> size, or a <code>struct</code> ending with one), even if there are additional data after the <code>sizedvalue</code>.</p>
 
@@ -413,7 +417,7 @@ return serial.read.fstruct(stream, attribute)
 </div>
 
 <div class="chapter" id="footer">
-<small>Last update: 2009-05-28 19:36:42 CEST</small>
+<small>Last update: 2009-07-01 02:27:37 CEST</small>
 </div>
 
 </body>
