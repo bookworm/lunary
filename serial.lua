@@ -9,11 +9,15 @@ struct = {}
 fstruct = {}
 alias = {}
 
+_M.verbose = false
+
 local function warning(message, level)
 	if not level then
 		level = 1
 	end
-	print(debug.traceback("warning: "..message, level+1))
+	if _M.verbose then
+		print(debug.traceback("warning: "..message, level+1))
+	end
 end
 
 -- function serialize.typename(value, typeparams...) return string end
