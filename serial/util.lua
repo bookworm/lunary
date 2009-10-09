@@ -18,11 +18,16 @@ local schar = string.char
 local mfloor = math.floor
 local tonumber = tonumber
 
-function enum(name2value)
+enum_names = {}
+
+function enum(name2value, name)
 	local self = {}
 	for k,v in pairs(name2value) do
 		self[k] = v
 		self[v] = k
+	end
+	if name then
+		enum_names[name] = self
 	end
 	return self
 end

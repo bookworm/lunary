@@ -366,7 +366,7 @@ function read.enum(stream, enum, int_t, ...)
 	end
 	local svalue = enum[value]
 	if not svalue then
-		warning("unknown enum number "..tostring(value)..", keeping numerical value")
+		warning("unknown enum number "..tostring(value)..(util.enum_names[enum] and (" for enum "..tostring(enum)) or "")..", keeping numerical value")
 		svalue = value
 	end
 	pop()
