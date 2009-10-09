@@ -9,11 +9,15 @@ struct = {}
 fstruct = {}
 alias = {}
 
+_M.verbose = false
+
 local function warning(message, level)
 	if not level then
 		level = 1
 	end
-	print(debug.traceback("warning: "..message, level+1))
+	if _M.verbose then
+		print(debug.traceback("warning: "..message, level+1))
+	end
 end
 
 -- function serialize.typename(value, typeparams...) return string end
@@ -388,7 +392,11 @@ function serialize.flags(value, flagset, int_t, ...)
 		assert(k==true, "flag has value other than true ("..tostring(k)..")")
 		ints[#ints+1] = flagset[flag]
 	end
-	value = libbit.bor(unpack(ints))
+	if #ints==0 then
+		value = 0
+	else
+		value = libbit.bor(unpack(ints))
+	end
 	local serialize = assert(serialize[int_t[1]], "unknown integer type "..tostring(int_t[1]).."")
 	local sdata,err = serialize(value, unpack(int_t, 2))
 	if not sdata then return nil,err end
@@ -523,12 +531,18 @@ function serialize.sizedvalue(value, size_t, value_t, ...)
 	if type(value_t)~='table' or select('#', ...)>=1 then
 		value_t = {value_t, ...}
 	end
-	assert(type(size_t)=='table', "size type definition should be an array")
-	assert(size_t[1], "size type definition array is empty")
+	-- get serialization functions
+	local size_serialize
+	if type(size_t)=='table' then
+		assert(size_t[1], "size type definition array is empty")
+		size_serialize = assert(serialize[size_t[1]], "unknown size type "..tostring(size_t[1]).."")
+	elseif type(size_t)=='number' then
+		size_serialize = size_t
+	else
+		error("size_t should be a type definition array or a number")
+	end
 	assert(type(value_t)=='table', "value type definition should be an array")
 	assert(value_t[1], "value type definition array is empty")
-	-- get serialization functions
-	local size_serialize = assert(serialize[size_t[1]], "unknown size type "..tostring(size_t[1]).."")
 	local value_serialize = assert(serialize[value_t[1]], "unknown value type "..tostring(value_t[1]).."")
 	-- serialize value
 	local svalue,err = value_serialize(value, unpack(value_t, 2))
@@ -538,10 +552,15 @@ function serialize.sizedvalue(value, size_t, value_t, ...)
 		svalue = svalue .. value.__trailing_bytes
 	end
 	local size = #svalue
-	local ssize,err = size_serialize(size, unpack(size_t, 2))
-	if not ssize then return nil,err end
-	pop()
-	return ssize .. svalue
+	if type(size_serialize)=='number' then
+		assert(size==size_serialize, "value size doesn't match sizedvalue size")
+		return svalue
+	else
+		local ssize,err = size_serialize(size, unpack(size_t, 2))
+		if not ssize then return nil,err end
+		pop()
+		return ssize .. svalue
+	end
 end
 
 function read.sizedvalue(stream, size_t, value_t, ...)
@@ -549,15 +568,26 @@ function read.sizedvalue(stream, size_t, value_t, ...)
 	if type(value_t)~='table' or select('#', ...)>=1 then
 		value_t = {value_t, ...}
 	end
-	assert(type(size_t)=='table', "size type definition should be an array")
-	assert(size_t[1], "size type definition array is empty")
+	-- get serialization functions
+	local size_read
+	if type(size_t)=='table' then
+		assert(size_t[1], "size type definition array is empty")
+		size_read = assert(read[size_t[1]], "unknown size type "..tostring(size_t[1]).."")
+	elseif type(size_t)=='number' then
+		size_read = size_t
+	else
+		error("size type definition should be an array")
+	end
 	assert(type(value_t)=='table', "value type definition should be an array")
 	assert(value_t[1], "value type definition array is empty")
-	-- get serialization functions
-	local size_read = assert(read[size_t[1]], "unknown size type "..tostring(size_t[1]).."")
 	local value_read = assert(read[value_t[1]], "unknown size type "..tostring(value_t[1]).."")
 	-- read size
-	local size,err = size_read(stream, unpack(size_t, 2))
+	local size,err
+	if type(size_read)=='number' then
+		size = size_read
+	else
+		size,err = size_read(stream, unpack(size_t, 2))
+	end
 	if not size then return nil,err end
 	-- read serialized value
 	local svalue,err = stream:receive(size)

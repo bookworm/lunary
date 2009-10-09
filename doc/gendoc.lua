@@ -360,9 +360,13 @@ A `sizedarray` is an array with its size stored in the stream before it, so it c
 	name = 'sizedvalue',
 	params = {'size_t', 'value_t'},
 	doc = [[
-This data type consist of the concatenation of another value and its size. In the stream the size is stored first, according to the `size_t` type descriptor. It is followed by the value, described by `value_t`.
+This data type has two modes, depending on the `size_t` type parameter.
 
-However this type has to be handled with care. When serializing, the value has to be serialized in its entirety before being returned or written, so that its size can be computed. This means its serialized version will exist completely in memory.
+If the `size_t` type parameter is a type descriptor, this data type consist of the concatenation of another value and its size. In the stream the size is stored first, according to the `size_t` type descriptor. It is followed by the value, described by `value_t`.
+
+If the `size_t` type parameter is a number, it is interpreted as the constant size of another value. In the stream, only the other value is serialized, according to the `value_t` type descriptor. On write, the value is first completely serialized to check that its size matches `size_t`. On read, `size_t` bytes are first read, and the value is deserialized from these bytes.
+
+This type has to be handled with care. When serializing, the value has to be serialized in its entirety before being returned or written, so that its size can be computed. This means its serialized version will exist completely in memory.
 
 On the other hand, when reading the value, the whole serialized value is first read into a temporary memory buffer. Then, when deserializing the value itself, it is deserialized from a temporary buffer stream created on the fly, which have a length method, and so even if the stream from which the `sizedvalue` is read hasn't one. This means the value can have a pseudo-infinite data type (like the `array` type with a `'*'` size, or a `struct` ending with one), even if there are additional data after the `sizedvalue`.]],
 }, {
