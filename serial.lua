@@ -819,15 +819,17 @@ function serialize.bytes2hex(value, count)
 	push 'bytes2hex'
 	assert(type(value)=='string', "bytes2hex value is not a string")
 	value = util.hex2bin(value)
-	assert(#value==count, "byte string has not the correct length")
+	local err
+	value,err = serialize.bytes(value, count)
+	if not value then return nil,err end
 	pop()
 	return value
 end
 
 function read.bytes2hex(stream, count)
 	push 'bytes2hex'
-	local value,err = stream:receive(count)
-	if not value then return value,ioerror(err) end
+	local value,err = read.bytes(stream, count)
+	if not value then return nil,err end
 	pop()
 	return util.bin2hex(value)
 end
@@ -838,14 +840,17 @@ function serialize.bytes2base32(value, count)
 	push 'bytes2base32'
 	assert(type(value)=='string', "bytes2base32 value is not a string")
 	value = util.base322bin(value)
-	assert(#value==count, "byte string has not the correct length")
+	local err
+	value,err = serialize.bytes(value, count)
+	if not value then return nil,err end
+	pop()
 	return value
 end
 
 function read.bytes2base32(stream, count)
 	push 'bytes2base32'
-	local value,err = stream:receive(count)
-	if not value then return value,ioerror(err) end
+	local value,err = read.bytes(stream, count)
+	if not value then return nil,err end
 	pop()
 	return util.bin2base32(value)
 end
