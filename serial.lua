@@ -513,12 +513,14 @@ function read.array(stream, size, value_t, ...)
 			if not elem then return nil,err end
 			value[#value+1] = elem
 		end
-	else
+	elseif type(size)=='number' then
 		for i=1,size do
 			local elem,err = read(stream, unpack(value_t, 2))
 			if not elem then return nil,err end
 			value[i] = elem
 		end
+	else
+		error("size is neither '*' nor a number ("..tostring(size)..")")
 	end
 	pop()
 	return value
