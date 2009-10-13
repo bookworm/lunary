@@ -962,6 +962,8 @@ end
 
 local cyield = coroutine.yield
 local cwrap,unpack = coroutine.wrap,unpack
+local token = {}
+local pack = function(...) return {n=select('#', ...), ...} end
 
 function serialize.fstruct(object, f, ...)
 	push 'fstruct'
@@ -976,14 +978,14 @@ function serialize.fstruct(object, f, ...)
 				local serialize = serialize[type]
 				if not serialize then error("no function to serialize field of type "..tostring(type)) end
 				local temp,err = serialize(object[field], select(2, ...))
-				if not temp then cyield(nil, err) end
+				if not temp then cyield(token, nil, err) end
 				str = str .. temp
 			else
 				return function(type, ...)
 					local serialize = serialize[type]
 					if not serialize then error("no function to serialize field of type "..tostring(type)) end
 					local temp,err = serialize(object[field], ...)
-					if not temp then cyield(nil, err) end
+					if not temp then cyield(token, nil, err) end
 					str = str .. temp
 				end
 			end
@@ -991,10 +993,13 @@ function serialize.fstruct(object, f, ...)
 	})
 	local coro = cwrap(function()
 		f(wrapper, wrapper, unpack(params, 1, params.n))
-		return true
+		return token, true
 	end)
-	local success,err = coro()
-	if not success then return nil,err end
+	local results = pack(coro())
+	while results[1]~=token do
+		results = pack(coro(cyield(unpack(results, 1, results.n))))
+	end
+	if not results[2] then return nil,unpack(results, 3, results.n) end
 	pop()
 	return str
 end
@@ -1011,23 +1016,26 @@ function write.fstruct(stream, object, f, ...)
 				local write = write[type]
 				if not write then error("no function to write field of type "..tostring(type)) end
 				local success,err = write(stream, object[field], select(2, ...))
-				if not success then cyield(nil, err) end
+				if not success then cyield(token, nil, err) end
 			else
 				return function(type, ...)
 					local write = write[type]
 					if not write then error("no function to write field of type "..tostring(type)) end
 					local success,err = write(stream, object[field], ...)
-					if not success then cyield(nil, err) end
+					if not success then cyield(token, nil, err) end
 				end
 			end
 		end,
 	})
 	local coro = cwrap(function()
 		f(wrapper, wrapper, unpack(params, 1, params.n))
-		return true
+		return token, true
 	end)
-	local success,err = coro()
-	if not success then return nil,err end
+	local results = pack(coro())
+	while results[1]~=token do
+		results = pack(coro(cyield(unpack(results, 1, results.n))))
+	end
+	if not results[2] then return nil,unpack(results, 3, results.n) end
 	pop()
 	return true
 end
@@ -1045,14 +1053,14 @@ function read.fstruct(stream, f, ...)
 				local read = read[type]
 				if not read then error("no function to read field of type "..tostring(type)) end
 				local value,err = read(stream, select(2, ...))
-				if value==nil then cyield(nil, err) end
+				if value==nil then cyield(token, nil, err) end
 				object[field] = value
 			else
 				return --[[util.wrap("field "..field, ]]function(type, ...)
 					local read = read[type]
 					if not read then error("no function to read field of type "..tostring(type)) end
 					local value,err = read(stream, ...)
-					if value==nil then cyield(nil, err) end
+					if value==nil then cyield(token, nil, err) end
 					object[field] = value
 				end--[[)]]
 			end
@@ -1060,10 +1068,13 @@ function read.fstruct(stream, f, ...)
 	})
 	local coro = cwrap(function()
 		f(wrapper, wrapper, unpack(params, 1, params.n))
-		return true
+		return token, true
 	end)
-	local success,err = coro()
-	if not success then return nil,err end
+	local results = pack(coro())
+	while results[1]~=token do
+		results = pack(coro(cyield(unpack(results, 1, results.n))))
+	end
+	if not results[2] then return nil,unpack(results, 3, results.n) end
 	pop()
 	return object
 end
@@ -1146,8 +1157,6 @@ setmetatable(read, {__index=function(self,k)
 		return read
 	end
 end})
-
-local pack = function(...) return {n=select('#', ...), ...} end
 
 setmetatable(write, {__index=function(self,k)
 	local struct = struct[k]
