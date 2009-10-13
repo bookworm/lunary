@@ -592,8 +592,13 @@ function read.sizedvalue(stream, size_t, value_t, ...)
 	end
 	if not size then return nil,err end
 	-- read serialized value
-	local svalue,err = stream:receive(size)
-	if not svalue then return nil,ioerror(err) end
+	local svalue,err
+	if size > 0 then
+		svalue,err = stream:receive(size)
+		if not svalue then return nil,ioerror(err) end
+	else
+		svalue = ""
+	end
 	-- build a buffer stream
 	local bvalue = _M.buffer(svalue)
 	-- read the value from the buffer
