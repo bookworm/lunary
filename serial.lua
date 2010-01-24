@@ -370,7 +370,7 @@ function read.enum(stream, enum, int_t, ...)
 	local read = assert(read[int_t[1]], "unknown integer type "..tostring(int_t[1]).."")
 	local value,err = read(stream, unpack(int_t, 2))
 	if not value then
-		return nil,err
+		return nil,assert(err, "type '"..int_t[1].."' returned nil but no error")
 	end
 	local svalue = enum[value]
 	if not svalue then
@@ -1062,14 +1062,14 @@ function read.fstruct(stream, f, ...)
 				local read = read[type]
 				if not read then error("no function to read field of type "..tostring(type)) end
 				local value,err = read(stream, select(2, ...))
-				if value==nil then cyield(token, nil, err) end
+				if value==nil then cyield(token, nil, assert(err, "type '"..type.."' returned nil, but no error")) end
 				object[field] = value
 			else
 				return --[[util.wrap("field "..field, ]]function(type, ...)
 					local read = read[type]
 					if not read then error("no function to read field of type "..tostring(type)) end
 					local value,err = read(stream, ...)
-					if value==nil then cyield(token, nil, err) end
+					if value==nil then cyield(token, nil, assert(err, "type '"..type.."' returned nil, but no error")) end
 					object[field] = value
 				end--[[)]]
 			end
