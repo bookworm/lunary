@@ -58,6 +58,7 @@ function read.uint8(stream)
 	push 'uint8'
 	local data,err = stream:receive(1)
 	if not data then return nil,ioerror(err) end
+	if #data < 1 then return nil,"end of stream" end
 	pop()
 	return string.byte(data)
 end
@@ -113,6 +114,7 @@ function read.uint16(stream, endianness)
 	push 'uint16'
 	local data,err = stream:receive(2)
 	if not data then return nil,ioerror(err) end
+	if #data < 2 then return nil,"end of stream" end
 	local a,b
 	if endianness=='le' then
 		b,a = string.byte(data, 1, 2)
@@ -183,6 +185,7 @@ function read.uint32(stream, endianness)
 	push 'uint32'
 	local data,err = stream:receive(4)
 	if not data then return nil,ioerror(err) end
+	if #data < 4 then return nil,"end of stream" end
 	local a,b,c,d
 	if endianness=='le' then
 		d,c,b,a = string.byte(data, 1, 4)
@@ -313,6 +316,7 @@ function read.uint64(stream, endianness)
 	push 'uint64'
 	local data,err = stream:receive(8)
 	if not data then return nil,ioerror(err) end
+	if #data < 8 then return nil,"end of stream" end
 	local a,b,c,d,e,f,g,h
 	if endianness=='le' then
 		h,g,f,e,d,c,b,a = string.byte(data, 1, 8)
@@ -455,6 +459,7 @@ function read.sizedbuffer(stream, size_t, ...)
 	end
 	local value,err = stream:receive(size)
 	if not value then return nil,ioerror(err) end
+	if #value < size then return nil,"end of stream" end
 	pop()
 	return value
 end
@@ -596,6 +601,7 @@ function read.sizedvalue(stream, size_t, value_t, ...)
 	if size > 0 then
 		svalue,err = stream:receive(size)
 		if not svalue then return nil,ioerror(err) end
+		if #svalue < size then return nil,"end of stream" end
 	else
 		svalue = ""
 	end
@@ -747,6 +753,7 @@ function read.float(stream, endianness)
 	end
 	local data,err = stream:receive(4)
 	if not data then return nil,ioerror(err) end
+	if #data < 4 then return nil,"end of stream" end
 	pop()
 	return libstruct.unpack(format, data)
 end
@@ -783,6 +790,7 @@ function read.double(stream, endianness)
 	end
 	local data,err = stream:receive(8)
 	if not data then return nil,ioerror(err) end
+	if #data < 8 then return nil,"end of stream" end
 	local value,err = libstruct.unpack(format, data)
 	if not value then return nil,err end
 	pop()
@@ -809,6 +817,7 @@ function read.bytes(stream, count)
 	end
 	local data,err = stream:receive(count)
 	if not data then return nil,ioerror(err) end
+	if #data < count then return nil,"end of stream" end
 	pop()
 	return data
 end
