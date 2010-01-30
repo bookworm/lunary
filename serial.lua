@@ -1362,4 +1362,4 @@ OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN
 THE SOFTWARE.
 ]]
 
--- vi: ts=4 sts=4 sw=4 encoding=utf-8
+-- vi: ts=4 sts=4 sw=4 noet enc=utf-8
