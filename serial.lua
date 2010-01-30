@@ -41,6 +41,8 @@ local function ioerror(msg)
 	return str
 end
 
+local pack = function(...) return {n=select('#', ...), ...} end
+
 ------------------------------------------------------------------------------
 
 function serialize.uint8(value)
@@ -951,9 +953,13 @@ function read._struct(stream, fields)
 		local name,type = field[1],field[2]
 		push(name)
 		local read = assert(read[type], "no function to read field of type "..tostring(type))
-		local value,err = read(stream, select(3, unpack(field)))
-		if value==nil then return nil,err end
-		object[name] = value
+		local results = pack(read(stream, select(3, unpack(field))))
+		if results[1]==nil then
+			-- replace partial result (at position 3) with our own
+			object[name] = results[3]
+			return nil,results[2],object,unpack(results, 4, results.n)
+		end
+		object[name] = results[1]
 		pop()
 	end
 	return object
@@ -961,10 +967,10 @@ end
 
 function read.struct(stream, fields)
 	push 'struct'
-	local object,err = read._struct(stream, fields)
-	if not object then return nil,err end
+	local results = pack(read._struct(stream, fields))
+	if not results[1] then return nil,unpack(results, 2, results.n) end
 	pop()
-	return object
+	return results[1]
 end
 
 ------------------------------------------------------------------------------
@@ -972,7 +978,6 @@ end
 local cyield = coroutine.yield
 local cwrap,unpack = coroutine.wrap,unpack
 local token = {}
-local pack = function(...) return {n=select('#', ...), ...} end
 
 function serialize.fstruct(object, f, ...)
 	push 'fstruct'
@@ -1061,16 +1066,24 @@ function read.fstruct(stream, f, ...)
 				local type = ...
 				local read = read[type]
 				if not read then error("no function to read field of type "..tostring(type)) end
-				local value,err = read(stream, select(2, ...))
-				if value==nil then cyield(token, nil, assert(err, "type '"..type.."' returned nil, but no error")) end
-				object[field] = value
+				local results = pack(read(stream, select(2, ...)))
+				if results[1]==nil then
+					-- replace field partial result (at position 3) with our own
+					object[field] = results[3]
+					cyield(token, nil, assert(results[2], "type '"..type.."' returned nil, but no error"), object, unpack(results, 4, results.n))
+				end
+				object[field] = results[1]
 			else
 				return --[[util.wrap("field "..field, ]]function(type, ...)
 					local read = read[type]
 					if not read then error("no function to read field of type "..tostring(type)) end
-					local value,err = read(stream, ...)
-					if value==nil then cyield(token, nil, assert(err, "type '"..type.."' returned nil, but no error")) end
-					object[field] = value
+					local results = pack(read(stream, ...))
+					if results[1]==nil then
+						-- replace field partial result (at position 3) with our own
+						object[field] = results[3]
+						cyield(token, nil, assert(results[2], "type '"..type.."' returned nil, but no error"), object, unpack(results, 4, results.n))
+					end
+					object[field] = results[1]
 				end--[[)]]
 			end
 		end,
