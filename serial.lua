@@ -535,7 +535,7 @@ end
 
 ------------------------------------------------------------------------------
 
-function serialize.sizedvalue(value, size_t, value_t, ...)
+function serialize.paddedvalue(value, size_t, padding, value_t, ...)
 	push 'sizedvalue'
 	if type(value_t)~='table' or select('#', ...)>=1 then
 		value_t = {value_t, ...}
@@ -550,6 +550,7 @@ function serialize.sizedvalue(value, size_t, value_t, ...)
 	else
 		error("size_t should be a type definition array or a number")
 	end
+	assert(padding==nil or type(padding)=='string' and #padding==1, "padding should be nil or a single character")
 	assert(type(value_t)=='table', "value type definition should be an array")
 	assert(value_t[1], "value type definition array is empty")
 	local value_serialize = assert(serialize[value_t[1]], "unknown value type "..tostring(value_t[1]).."")
@@ -562,7 +563,13 @@ function serialize.sizedvalue(value, size_t, value_t, ...)
 	end
 	local size = #svalue
 	if type(size_serialize)=='number' then
-		assert(size==size_serialize, "value size doesn't match sizedvalue size")
+		if padding then
+			-- check we don't exceed the padded size
+			assert(size<=size_serialize, "value size exceeds padded size")
+			svalue = svalue .. string.rep(padding, size_serialize-size)
+		else
+			assert(size==size_serialize, "value size doesn't match sizedvalue size")
+		end
 		return svalue
 	else
 		local ssize,err = size_serialize(size, unpack(size_t, 2))
@@ -572,8 +579,8 @@ function serialize.sizedvalue(value, size_t, value_t, ...)
 	end
 end
 
-function read.sizedvalue(stream, size_t, value_t, ...)
-	push 'sizedvalue'
+function read.paddedvalue(stream, size_t, padding, value_t, ...)
+	push 'paddedvalue'
 	if type(value_t)~='table' or select('#', ...)>=1 then
 		value_t = {value_t, ...}
 	end
@@ -614,16 +621,43 @@ function read.sizedvalue(stream, size_t, value_t, ...)
 	if not value then return nil,err end
 	-- if the buffer is not empty save trailing bytes or generate an error
 	if bvalue:length() > 0 then
-		local msg = "trailing bytes in sized value not read by value serializer "..tostring(value_t[1])..""
-		if type(value)=='table' then
-			warning(msg)
-			value.__trailing_bytes = bvalue:receive("*a")
-		else
-			error(msg)
+		local __trailing_bytes = bvalue:receive("*a")
+		if padding then
+			-- remove padding
+			if padding=='\0' then
+				__trailing_bytes = __trailing_bytes:match("^(.-)%z*$")
+			else
+				__trailing_bytes = __trailing_bytes:match("^(.-)%"..padding.."*$")
+			end
+		end
+		if #__trailing_bytes > 0 then
+			local msg = "trailing bytes in sized value not read by value serializer "..tostring(value_t[1])..""
+			if type(value)=='table' then
+				warning(msg)
+				value.__trailing_bytes = bvalue:receive("*a")
+			else
+				error(msg)
+			end
 		end
 	end
 	pop()
 	return value
+end
+
+------------------------------------------------------------------------------
+
+function serialize.sizedvalue(value, size_t, value_t, ...)
+    push 'sizedvalue'
+	local results = pack(serialize.paddedvalue(value, size_t, nil, value_t, ...))
+    pop()
+    return unpack(results, 1, results.n)
+end
+
+function read.sizedvalue(stream, size_t, value_t, ...)
+    push 'sizedvalue'
+	local results = pack(read.paddedvalue(stream, size_t, nil, value_t, ...))
+    pop()
+    return unpack(results, 1, results.n)
 end
 
 ------------------------------------------------------------------------------
