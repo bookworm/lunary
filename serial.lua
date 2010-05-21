@@ -1914,8 +1914,7 @@ end
 
 -- tcp stream
 
-do
-	require 'socket'
+if pcall(require, 'socket') then
 	local server,port
 	for i=1,10 do
 		port = 50000+i
@@ -1934,6 +1933,8 @@ do
 	else
 		print("could not test tcp streams, could not bind a server socket")
 	end
+else
+	print("could not test tcp streams, socket module is not available")
 end
 
 -- uint
