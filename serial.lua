@@ -1932,7 +1932,7 @@ do
 		a:send("foo")
 		assert(_M.read.cstring(in_)=="foobar")
 	else
-		print("could not test tcp streams")
+		print("could not test tcp streams, could not bind a server socket")
 	end
 end
 
