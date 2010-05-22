@@ -43,6 +43,32 @@ end
 
 local pack = function(...) return {n=select('#', ...), ...} end
 
+local function _receive(stream, pattern)
+	assert(type(pattern)=='number')
+	local data = ""
+	while #data < pattern do
+		local bytes,err = stream:receive(pattern - #data)
+		-- error
+		if not bytes then return nil,err end
+		-- eof
+		if #bytes==0 then break end
+		-- accumulate bytes
+		data = data..bytes
+	end
+	return data
+end
+
+local function _send(stream, data)
+	local written,err = stream:send(data)
+	while written and written < #data do
+		print("writing again the same block")
+		data = data:sub(#written + 1)
+		written,err = stream:send(data)
+	end
+	if not written then return nil,err end
+	return #data
+end
+
 ------------------------------------------------------------------------------
 
 function serialize.uint8(value)
@@ -58,7 +84,7 @@ end
 
 function read.uint8(stream)
 	push 'uint8'
-	local data,err = stream:receive(1)
+	local data,err = _receive(stream, 1)
 	if not data then return nil,ioerror(err) end
 	if #data < 1 then return nil,"end of stream" end
 	pop()
@@ -114,7 +140,7 @@ end
 
 function read.uint16(stream, endianness)
 	push 'uint16'
-	local data,err = stream:receive(2)
+	local data,err = _receive(stream, 2)
 	if not data then return nil,ioerror(err) end
 	if #data < 2 then return nil,"end of stream" end
 	local a,b
@@ -185,7 +211,7 @@ end
 
 function read.uint32(stream, endianness)
 	push 'uint32'
-	local data,err = stream:receive(4)
+	local data,err = _receive(stream, 4)
 	if not data then return nil,ioerror(err) end
 	if #data < 4 then return nil,"end of stream" end
 	local a,b,c,d
@@ -316,7 +342,7 @@ end
 
 function read.uint64(stream, endianness)
 	push 'uint64'
-	local data,err = stream:receive(8)
+	local data,err = _receive(stream, 8)
 	if not data then return nil,ioerror(err) end
 	if #data < 8 then return nil,"end of stream" end
 	local a,b,c,d,e,f,g,h
@@ -459,7 +485,7 @@ function read.sizedbuffer(stream, size_t, ...)
 	if stream.length then
 		assert(stream:length() >= size, "invalid sizedbuffer size, stream is too short")
 	end
-	local value,err = stream:receive(size)
+	local value,err = _receive(stream, size)
 	if not value then return nil,ioerror(err) end
 	if #value < size then return nil,"end of stream" end
 	pop()
@@ -608,7 +634,7 @@ function read.paddedvalue(stream, size_t, padding, value_t, ...)
 	-- read serialized value
 	local svalue,err
 	if size > 0 then
-		svalue,err = stream:receive(size)
+		svalue,err = _receive(stream, size)
 		if not svalue then return nil,ioerror(err) end
 		if #svalue < size then return nil,"end of stream" end
 	else
@@ -787,7 +813,7 @@ function read.float(stream, endianness)
 	else
 		error("unknown endianness")
 	end
-	local data,err = stream:receive(4)
+	local data,err = _receive(stream, 4)
 	if not data then return nil,ioerror(err) end
 	if #data < 4 then return nil,"end of stream" end
 	pop()
@@ -865,7 +891,7 @@ function read.float(stream, endianness)
 	else
 		error("unknown endianness")
 	end
-	local data,err = stream:receive(4)
+	local data,err = _receive(stream, 4)
 	if not data then return nil,ioerror(err) end
 	if #data < 4 then return nil,"end of stream" end
 	pop()
@@ -907,7 +933,7 @@ function read.double(stream, endianness)
 	else
 		error("unknown endianness")
 	end
-	local data,err = stream:receive(8)
+	local data,err = _receive(stream, 8)
 	if not data then return nil,ioerror(err) end
 	if #data < 8 then return nil,"end of stream" end
 	local value,err = libstruct.unpack(format, data)
@@ -934,7 +960,7 @@ function read.bytes(stream, count)
 		assert(stream.length, "infinite arrays can only be read from buffers, not infinite streams")
 		count = stream:length()
 	end
-	local data,err = stream:receive(count)
+	local data,err = _receive(stream, count)
 	if not data then return nil,ioerror(err) end
 	if #data < count then return nil,"end of stream" end
 	pop()
@@ -1340,8 +1366,8 @@ setmetatable(write, {__index=function(self,k)
 			if not data then
 				return nil,err
 			end
-			local success,err = stream:send(data)
-			if not success then return nil,ioerror(err) end
+			local written,err = _send(stream, data)
+			if not written then return nil,ioerror(err) end
 			return true
 		end
 		self[k] = write
