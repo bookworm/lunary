@@ -634,7 +634,7 @@ function read.paddedvalue(stream, size_t, padding, value_t, ...)
 			local msg = "trailing bytes in sized value not read by value serializer "..tostring(value_t[1])..""
 			if type(value)=='table' then
 				warning(msg)
-				value.__trailing_bytes = bvalue:receive("*a")
+				value.__trailing_bytes = __trailing_bytes
 			else
 				error(msg)
 			end
