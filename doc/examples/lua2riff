@@ -1,4 +1,4 @@
-#!lua
+#!/usr/bin/env lua
 
 local util = require 'util'
 local serial = require 'serial'
