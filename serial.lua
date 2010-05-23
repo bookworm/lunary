@@ -1,6 +1,11 @@
-module((...), package.seeall)
+module(... or 'test', package.seeall)
 
-local util = require(_NAME..".util")
+local util
+if _NAME=='test' then
+	util = require("serial.util")
+else
+	util = require(_NAME..".util")
+end
 
 serialize = {}
 read = {}
@@ -622,7 +627,7 @@ function read.paddedvalue(stream, size_t, padding, value_t, ...)
 	end
 	assert(type(value_t)=='table', "value type definition should be an array")
 	assert(value_t[1], "value type definition array is empty")
-	local value_read = assert(read[value_t[1]], "unknown size type "..tostring(value_t[1]).."")
+	local value_read = assert(read[value_t[1]], "unknown value type "..tostring(value_t[1]).."")
 	-- read size
 	local size,err
 	if type(size_read)=='number' then
@@ -1496,8 +1501,304 @@ function filestream_methods_verbose:skip(nbytes)
 	io.write(string.format("\rread: %.2f%% (%d / %d)", (self.cur/self.len)*100, self.cur, self.len))
 end
 
+------------------------------------------------------------------------------
+
+if _NAME=='test' then
+
+-- use random numbers to improve coverage without trying all values, but make
+-- sure tests are repeatable
+math.randomseed(0)
+
+local function randombuffer(size)
+	local t = {}
+	for i=1,size do
+		t[i] = math.random(0, 255)
+	end
+	return string.char(unpack(t))
+end
+
+-- uint8
+
+assert(_M.read.uint8(_M.buffer("\042"))==42)
+assert(_M.read.uint8(_M.buffer("\242"))==242)
+
+-- sint8
+
+assert(_M.read.sint8(_M.buffer("\042"))==42)
+assert(_M.read.sint8(_M.buffer("\242"))==-14)
+
+-- uint16
+
+assert(_M.read.uint16(_M.buffer("\037\042"), 'le')==10789)
+assert(_M.read.uint16(_M.buffer("\237\042"), 'le')==10989)
+assert(_M.read.uint16(_M.buffer("\037\242"), 'le')==61989)
+assert(_M.read.uint16(_M.buffer("\237\242"), 'le')==62189)
+
+assert(_M.read.uint16(_M.buffer("\037\042"), 'be')==9514)
+assert(_M.read.uint16(_M.buffer("\237\042"), 'be')==60714)
+assert(_M.read.uint16(_M.buffer("\037\242"), 'be')==9714)
+assert(_M.read.uint16(_M.buffer("\237\242"), 'be')==60914)
+
+-- sint16
+
+assert(_M.read.sint16(_M.buffer("\037\042"), 'le')==10789)
+assert(_M.read.sint16(_M.buffer("\237\042"), 'le')==10989)
+assert(_M.read.sint16(_M.buffer("\037\242"), 'le')==-3547)
+assert(_M.read.sint16(_M.buffer("\237\242"), 'le')==-3347)
+
+assert(_M.read.sint16(_M.buffer("\037\042"), 'be')==9514)
+assert(_M.read.sint16(_M.buffer("\237\042"), 'be')==-4822)
+assert(_M.read.sint16(_M.buffer("\037\242"), 'be')==9714)
+assert(_M.read.sint16(_M.buffer("\237\242"), 'be')==-4622)
+
+-- uint32
+
+assert(_M.read.uint32(_M.buffer("\037\000\000\042"), 'le')==704643109)
+assert(_M.read.uint32(_M.buffer("\037\000\000\242"), 'le')==4060086309)
+assert(_M.read.uint32(_M.buffer("\237\000\000\042"), 'le')==704643309)
+assert(_M.read.uint32(_M.buffer("\237\000\000\242"), 'le')==4060086509)
+
+assert(_M.read.uint32(_M.buffer("\037\000\000\042"), 'be')==620757034)
+assert(_M.read.uint32(_M.buffer("\037\000\000\242"), 'be')==620757234)
+assert(_M.read.uint32(_M.buffer("\237\000\000\042"), 'be')==3976200234)
+assert(_M.read.uint32(_M.buffer("\237\000\000\242"), 'be')==3976200434)
+
+-- sint32
+
+assert(_M.read.sint32(_M.buffer("\037\000\000\042"), 'le')==704643109)
+assert(_M.read.sint32(_M.buffer("\037\000\000\242"), 'le')==-234880987)
+assert(_M.read.sint32(_M.buffer("\237\000\000\042"), 'le')==704643309)
+assert(_M.read.sint32(_M.buffer("\237\000\000\242"), 'le')==-234880787)
+
+assert(_M.read.sint32(_M.buffer("\037\000\000\042"), 'be')==620757034)
+assert(_M.read.sint32(_M.buffer("\037\000\000\242"), 'be')==620757234)
+assert(_M.read.sint32(_M.buffer("\237\000\000\042"), 'be')==-318767062)
+assert(_M.read.sint32(_M.buffer("\237\000\000\242"), 'be')==-318766862)
+
+-- uint64
+
+assert(_M.read.uint64(_M.buffer("\000\000\000\000\037\000\000\042"), 'le')=="\000\000\000\000\037\000\000\042")
+assert(_M.read.uint64(_M.buffer("\000\000\000\000\037\000\000\242"), 'le')=="\000\000\000\000\037\000\000\242")
+assert(_M.read.uint64(_M.buffer("\000\000\000\000\237\000\000\042"), 'le')=="\000\000\000\000\237\000\000\042")
+assert(_M.read.uint64(_M.buffer("\000\000\000\000\237\000\000\242"), 'le')=="\000\000\000\000\237\000\000\242")
+
+assert(_M.read.uint64(_M.buffer("\000\000\000\000\037\000\000\042"), 'be')==620757034)
+assert(_M.read.uint64(_M.buffer("\000\000\000\000\037\000\000\242"), 'be')==620757234)
+assert(_M.read.uint64(_M.buffer("\000\000\000\000\237\000\000\042"), 'be')==3976200234)
+assert(_M.read.uint64(_M.buffer("\000\000\000\000\237\000\000\242"), 'be')==3976200434)
+
+assert(_M.read.uint64(_M.buffer("\000\000\000\000\037\000\000\042"), 'le')=="\000\000\000\000\037\000\000\042")
+assert(_M.read.uint64(_M.buffer("\000\000\000\000\037\000\000\242"), 'le')=="\000\000\000\000\037\000\000\242")
+assert(_M.read.uint64(_M.buffer("\000\000\000\000\237\000\000\042"), 'le')=="\000\000\000\000\237\000\000\042")
+assert(_M.read.uint64(_M.buffer("\000\000\000\000\237\000\000\242"), 'le')=="\000\000\000\000\237\000\000\242")
+
+assert(_M.read.uint64(_M.buffer("\000\000\000\000\037\000\000\042"), 'be')==620757034)
+assert(_M.read.uint64(_M.buffer("\000\000\000\000\037\000\000\242"), 'be')==620757234)
+assert(_M.read.uint64(_M.buffer("\000\000\000\000\237\000\000\042"), 'be')==3976200234)
+assert(_M.read.uint64(_M.buffer("\000\000\000\000\237\000\000\242"), 'be')==3976200434)
+
+assert(_M.read.uint64(_M.buffer("\037\000\000\042\000\000\000\000"), 'le')==704643109)
+assert(_M.read.uint64(_M.buffer("\037\000\000\242\000\000\000\000"), 'le')==4060086309)
+assert(_M.read.uint64(_M.buffer("\237\000\000\042\000\000\000\000"), 'le')==704643309)
+assert(_M.read.uint64(_M.buffer("\237\000\000\242\000\000\000\000"), 'le')==4060086509)
+
+assert(_M.read.uint64(_M.buffer("\037\000\000\042\000\000\000\000"), 'be')=="\000\000\000\000\042\000\000\037")
+assert(_M.read.uint64(_M.buffer("\037\000\000\242\000\000\000\000"), 'be')=="\000\000\000\000\242\000\000\037")
+assert(_M.read.uint64(_M.buffer("\237\000\000\042\000\000\000\000"), 'be')=="\000\000\000\000\042\000\000\237")
+assert(_M.read.uint64(_M.buffer("\237\000\000\242\000\000\000\000"), 'be')=="\000\000\000\000\242\000\000\237")
+
+assert(_M.read.uint64(_M.buffer("\037\000\000\042\000\000\000\000"), 'le')==704643109)
+assert(_M.read.uint64(_M.buffer("\037\000\000\242\000\000\000\000"), 'le')==4060086309)
+assert(_M.read.uint64(_M.buffer("\237\000\000\042\000\000\000\000"), 'le')==704643309)
+assert(_M.read.uint64(_M.buffer("\237\000\000\242\000\000\000\000"), 'le')==4060086509)
+
+assert(_M.read.uint64(_M.buffer("\037\000\000\042\000\000\000\000"), 'be')=="\000\000\000\000\042\000\000\037")
+assert(_M.read.uint64(_M.buffer("\037\000\000\242\000\000\000\000"), 'be')=="\000\000\000\000\242\000\000\037")
+assert(_M.read.uint64(_M.buffer("\237\000\000\042\000\000\000\000"), 'be')=="\000\000\000\000\042\000\000\237")
+assert(_M.read.uint64(_M.buffer("\237\000\000\242\000\000\000\000"), 'be')=="\000\000\000\000\242\000\000\237")
+
+assert(_M.read.uint64(_M.buffer("\000\000\000\037\042\000\000\000"), 'le')==181009383424)
+assert(_M.read.uint64(_M.buffer("\000\000\000\037\242\000\000\000"), 'le')==1040002842624)
+assert(_M.read.uint64(_M.buffer("\000\000\000\237\042\000\000\000"), 'le')==184364826624)
+assert(_M.read.uint64(_M.buffer("\000\000\000\237\242\000\000\000"), 'le')==1043358285824)
+
+assert(_M.read.uint64(_M.buffer("\000\000\000\037\042\000\000\000"), 'be')==159618433024)
+assert(_M.read.uint64(_M.buffer("\000\000\000\037\242\000\000\000"), 'be')==162973876224)
+assert(_M.read.uint64(_M.buffer("\000\000\000\237\042\000\000\000"), 'be')==1018611892224)
+assert(_M.read.uint64(_M.buffer("\000\000\000\237\242\000\000\000"), 'be')==1021967335424)
+
+assert(_M.read.uint64(_M.buffer("\000\000\000\037\042\000\000\000"), 'le')==181009383424)
+assert(_M.read.uint64(_M.buffer("\000\000\000\037\242\000\000\000"), 'le')==1040002842624)
+assert(_M.read.uint64(_M.buffer("\000\000\000\237\042\000\000\000"), 'le')==184364826624)
+assert(_M.read.uint64(_M.buffer("\000\000\000\237\242\000\000\000"), 'le')==1043358285824)
+
+assert(_M.read.uint64(_M.buffer("\000\000\000\037\042\000\000\000"), 'be')==159618433024)
+assert(_M.read.uint64(_M.buffer("\000\000\000\037\242\000\000\000"), 'be')==162973876224)
+assert(_M.read.uint64(_M.buffer("\000\000\000\237\042\000\000\000"), 'be')==1018611892224)
+assert(_M.read.uint64(_M.buffer("\000\000\000\237\242\000\000\000"), 'be')==1021967335424)
+
+assert(_M.read.uint64(_M.buffer("\037\000\000\000\000\000\000\042"), 'le')=="\037\000\000\000\000\000\000\042")
+assert(_M.read.uint64(_M.buffer("\037\000\000\000\000\000\000\242"), 'le')=="\037\000\000\000\000\000\000\242")
+assert(_M.read.uint64(_M.buffer("\237\000\000\000\000\000\000\042"), 'le')=="\237\000\000\000\000\000\000\042")
+assert(_M.read.uint64(_M.buffer("\237\000\000\000\000\000\000\242"), 'le')=="\237\000\000\000\000\000\000\242")
+
+assert(_M.read.uint64(_M.buffer("\037\000\000\000\000\000\000\042"), 'be')=="\042\000\000\000\000\000\000\037")
+assert(_M.read.uint64(_M.buffer("\037\000\000\000\000\000\000\242"), 'be')=="\242\000\000\000\000\000\000\037")
+assert(_M.read.uint64(_M.buffer("\237\000\000\000\000\000\000\042"), 'be')=="\042\000\000\000\000\000\000\237")
+assert(_M.read.uint64(_M.buffer("\237\000\000\000\000\000\000\242"), 'be')=="\242\000\000\000\000\000\000\237")
+
+assert(_M.read.uint64(_M.buffer("\037\000\000\000\000\000\000\042"), 'le')=="\037\000\000\000\000\000\000\042")
+assert(_M.read.uint64(_M.buffer("\037\000\000\000\000\000\000\242"), 'le')=="\037\000\000\000\000\000\000\242")
+assert(_M.read.uint64(_M.buffer("\237\000\000\000\000\000\000\042"), 'le')=="\237\000\000\000\000\000\000\042")
+assert(_M.read.uint64(_M.buffer("\237\000\000\000\000\000\000\242"), 'le')=="\237\000\000\000\000\000\000\242")
+
+assert(_M.read.uint64(_M.buffer("\037\000\000\000\000\000\000\042"), 'be')=="\042\000\000\000\000\000\000\037")
+assert(_M.read.uint64(_M.buffer("\037\000\000\000\000\000\000\242"), 'be')=="\242\000\000\000\000\000\000\037")
+assert(_M.read.uint64(_M.buffer("\237\000\000\000\000\000\000\042"), 'be')=="\042\000\000\000\000\000\000\237")
+assert(_M.read.uint64(_M.buffer("\237\000\000\000\000\000\000\242"), 'be')=="\242\000\000\000\000\000\000\237")
+
+-- enum
+
+local foo_e = util.enum{
+	bar = 1,
+	baz = 2,
+}
+
+assert(_M.read.enum(_M.buffer("\001"), foo_e, 'uint8')=='bar')
+assert(_M.read.enum(_M.buffer("\002\000"), foo_e, 'uint16', 'le')=='baz')
+
+-- flags
+
+local foo_f = {
+	bar = 1,
+	baz = 2,
+}
+
+local value = _M.read.flags(_M.buffer("\001"), foo_e, 'uint8')
+assert(value.bar==true and next(value, next(value))==nil)
+local value = _M.read.flags(_M.buffer("\003\000"), foo_e, 'uint16', 'le')
+assert(value.bar==true and value.baz==true and next(value, next(value, next(value)))==nil)
+
+-- bytes
+
+assert(_M.read.bytes(_M.buffer("fo"), 2)=='fo')
+assert(_M.read.bytes(_M.buffer("foo"), 2)=='fo')
+
+-- sizedbuffer
+
+assert(_M.read.sizedbuffer(_M.buffer("\002fo"), 'uint8')=='fo')
+assert(_M.read.sizedbuffer(_M.buffer("\002\000foo"), 'uint16', 'le')=='fo')
+
+-- array
+
+local value = _M.read.array(_M.buffer("\037\042"), 2, 'uint8')
+assert(value[1]==37 and value[2]==42 and next(value, next(value, next(value)))==nil)
+local value = _M.read.array(_M.buffer("\000\042\000\037"), '*', 'uint16', 'be')
+assert(value[1]==42 and value[2]==37 and next(value, next(value, next(value)))==nil)
+
+-- paddedvalue
+
+assert(_M.read.paddedvalue(_M.buffer("\037\000\000"), 3, '\000', 'uint8')==37)
+assert(_M.read.paddedvalue(_M.buffer("\004\042\000\000\000"), {'uint8'}, '\000', 'uint8')==42)
+
+-- sizedvalue
+
+local value = _M.read.sizedvalue(_M.buffer("\037\000\000"), 2, 'array', '*', 'uint8')
+assert(value[1]==37 and value[2]==0 and next(value, next(value, next(value)))==nil)
+assert(_M.read.sizedvalue(_M.buffer("\000\004foobar"), {'uint16', 'be'}, 'bytes', '*')=="foob")
+
+-- sizedarray
+
+local value = _M.read.sizedarray(_M.buffer("\002\037\042\000"), {'uint8'}, 'uint8')
+assert(value[1]==37 and value[2]==42 and next(value, next(value, next(value)))==nil)
+local value = _M.read.sizedarray(_M.buffer("\002\000\000\037\000\042\038"), {'uint16', 'le'}, 'uint16', 'be')
+assert(value[1]==37 and value[2]==42 and next(value, next(value, next(value)))==nil)
+local value = _M.read.sizedarray(_M.buffer("\002\000\000\037\000\042\038"), {'uint16', 'le'}, {'uint16', 'be'})
+assert(value[1]==37 and value[2]==42 and next(value, next(value, next(value)))==nil)
+
+-- cstring
+
+assert(_M.read.cstring(_M.buffer("foo\000bar"))=="foo")
+
+-- float
+
+--print(string.byte(_M.serialize.float(-37e-12, 'le'), 1, 4))
+
+assert(_M.serialize.float(37e12, 'le')=='\239\154\006\086')
+assert(_M.serialize.float(-3.1953823392725e-34, 'le')=='\157\094\212\135')
+assert(_M.read.float(_M.buffer("\000\000\000\000"), 'le')==0)
+assert(_M.read.float(_M.buffer("\000\000\128\063"), 'le')==1)
+assert(_M.read.float(_M.buffer("\000\000\000\064"), 'le')==2)
+assert(_M.read.float(_M.buffer("\000\000\040\066"), 'le')==42)
+assert(_M.read.float(_M.buffer("\239\154\006\086"), 'le')==36999998210048) -- best approx for 37e12
+assert(_M.read.float(_M.buffer("\000\000\000\063"), 'le')==0.5)
+assert(math.abs(_M.read.float(_M.buffer("\010\215\163\060"), 'le') / 0.02 - 1) < 1e-7)
+assert(math.abs(_M.read.float(_M.buffer("\076\186\034\046"), 'le') / 37e-12 - 1) < 1e-8)
+assert(_M.read.float(_M.buffer("\000\000\128\191"), 'le')==-1)
+assert(_M.read.float(_M.buffer("\000\000\000\192"), 'le')==-2)
+assert(_M.read.float(_M.buffer("\000\000\040\194"), 'le')==-42)
+assert(math.abs(_M.read.float(_M.buffer("\239\154\006\214"), 'le') / -37e12 - 1) < 1e-7)
+assert(math.abs(_M.read.float(_M.buffer("\076\186\034\174"), 'le') / -37e-12 - 1) < 1e-8)
+
+-- double
+-- :TODO:
+
+-- bytes2hex
+
+assert(_M.read.bytes2hex(_M.buffer("fo"), 2)=='666F')
+assert(_M.read.bytes2hex(_M.buffer("foo"), 2)=='666F')
+
+-- bytes2base32
+
+assert(_M.read.bytes2base32(_M.buffer("fooba"), 5)=='MZXW6YTB')
+assert(_M.read.bytes2base32(_M.buffer("foobar"), 5)=='MZXW6YTB')
+
+-- boolean
+
+assert(_M.read.boolean(_M.buffer("\000"), 'uint8')==false)
+assert(_M.read.boolean(_M.buffer("\000\001"), 'uint16', 'be')==true)
+assert(_M.read.boolean(_M.buffer("\002\000"), 'sint16', 'le')==2)
+
+-- boolean8
+
+assert(_M.read.boolean8(_M.buffer("\000"))==false)
+assert(_M.read.boolean8(_M.buffer("\001"))==true)
+assert(_M.read.boolean8(_M.buffer("\002\000"))==2)
+
+-- struct
+
+local foo_s = {
+	{'foo', 'uint8'},
+	{'bar', 'uint16', 'be'},
+}
+_M.struct.foo_s = foo_s
+
+local value = _M.read.foo_s(_M.buffer("\001\002\003\004"))
+assert(value.foo==1 and value.bar==515 and next(value, next(value, next(value)))==nil)
+
+-- fstruct
+
+function _M.fstruct.foo_s(self)
+	self 'foo' ('uint8')
+	self 'bar' ('uint16', 'be')
+end
+
+local value = _M.read.foo_s(_M.buffer("\001\002\003\004"))
+assert(value.foo==1 and value.bar==515 and next(value, next(value, next(value)))==nil)
+
+-- fields
+
+local value = {baz=0}
+assert(_M.read.fields(_M.buffer("\001\002\003\004"), value, foo_s))
+assert(value.baz==0 and value.foo==1 and value.bar==515 and next(value, next(value, next(value, next(value))))==nil)
+
+
+print("all tests passed successfully")
+
+end
+
 --[[
-Copyright (c) 2009 Jérôme Vuarand
+Copyright (c) 2009-2010 Jérôme Vuarand
 
 Permission is hereby granted, free of charge, to any person obtaining a copy
 of this software and associated documentation files (the "Software"), to deal
