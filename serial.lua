@@ -465,8 +465,8 @@ function read.sizedbuffer(stream, size_t, ...)
 	local read = assert(read[size_t[1]], "unknown size type "..tostring(size_t[1]).."")
 	local size,err = read(stream, unpack(size_t, 2))
 	if not size then return nil,err end
-	if stream.length then
-		assert(stream:length() >= size, "invalid sizedbuffer size, stream is too short")
+	if stream.bytelength then
+		assert(stream:bytelength() >= size, "invalid sizedbuffer size, stream is too short")
 	end
 	local value,err = stream:getbytes(size)
 	if not value then return nil,ioerror(err) end
@@ -523,8 +523,8 @@ function read.array(stream, size, value_t, ...)
 	local read = assert(read[value_t[1]], "unknown value type "..tostring(value_t[1]).."")
 	local value = {}
 	if size=='*' then
-		assert(stream.length, "infinite arrays can only be read from buffers, not infinite streams")
-		while stream:length() > 0 do
+		assert(stream.bytelength, "infinite arrays can only be read from streams with a length")
+		while stream:bytelength() > 0 do
 			local elem,err = read(stream, unpack(value_t, 2))
 			if not elem then return nil,err end
 			value[#value+1] = elem
@@ -629,8 +629,8 @@ function read.paddedvalue(stream, size_t, padding, value_t, ...)
 	local value,err = value_read(bvalue, unpack(value_t, 2))
 	if not value then return nil,err end
 	-- if the buffer is not empty save trailing bytes or generate an error
-	if bvalue:length() > 0 then
-		local __trailing_bytes = bvalue:getbytes(bvalue:length())
+	if bvalue:bytelength() > 0 then
+		local __trailing_bytes = bvalue:getbytes(bvalue:bytelength())
 		if padding then
 			-- remove padding
 			if padding=='\0' then
@@ -940,8 +940,8 @@ end
 function read.bytes(stream, count)
 	push 'bytes'
 	if count=='*' then
-		assert(stream.length, "infinite arrays can only be read from buffers, not infinite streams")
-		count = stream:length()
+		assert(stream.bytelength, "infinite byte sequences can only be read from streams with a length")
+		count = stream:bytelength()
 	end
 	local data,err = stream:getbytes(count)
 	if not data then return nil,ioerror(err) end
@@ -1391,7 +1391,7 @@ function buffer_methods:putbytes(data)
 	return #data
 end
 
-function buffer_methods:length()
+function buffer_methods:bytelength()
 	return #self.data
 end
 
@@ -1427,7 +1427,7 @@ function filestream_methods:putbytes(data)
 	return self.file:write(data)
 end
 
-function filestream_methods:length()
+function filestream_methods:bytelength()
 	local cur = self.file:seek()
 	local len = self.file:seek('end')
 	self.file:seek('set', cur)
