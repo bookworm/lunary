@@ -106,8 +106,10 @@ function serialize.sint8(value)
 	if value < 0 then
 		value = value + 2^8
 	end
+	local value,err = serialize.uint8(value)
+	if not value then return nil,err end
 	pop()
-	return serialize.uint8(value)
+	return value
 end
 
 function read.sint8(stream)
@@ -170,8 +172,10 @@ function serialize.sint16(value, endianness)
 	if value < 0 then
 		value = value + 2 ^ 16
 	end
+	local value,err = serialize.uint16(value, endianness)
+	if not value then return nil,err end
 	pop()
-	return serialize.uint16(value, endianness)
+	return value
 end
 
 function read.sint16(stream, endianness)
