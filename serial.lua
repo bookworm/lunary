@@ -48,32 +48,6 @@ end
 
 local pack = function(...) return {n=select('#', ...), ...} end
 
-local function _receive(stream, pattern)
-	assert(type(pattern)=='number')
-	local data = ""
-	while #data < pattern do
-		local bytes,err = stream:receive(pattern - #data)
-		-- error
-		if not bytes then return nil,err end
-		-- eof
-		if #bytes==0 then break end
-		-- accumulate bytes
-		data = data..bytes
-	end
-	return data
-end
-
-local function _send(stream, data)
-	local written,err = stream:send(data)
-	while written and written < #data do
-		print("writing again the same block")
-		data = data:sub(#written + 1)
-		written,err = stream:send(data)
-	end
-	if not written then return nil,err end
-	return #data
-end
-
 ------------------------------------------------------------------------------
 
 function serialize.uint8(value)
@@ -89,7 +63,7 @@ end
 
 function read.uint8(stream)
 	push 'uint8'
-	local data,err = _receive(stream, 1)
+	local data,err = stream:getbytes(1)
 	if not data then return nil,ioerror(err) end
 	if #data < 1 then return nil,"end of stream" end
 	pop()
@@ -147,7 +121,7 @@ end
 
 function read.uint16(stream, endianness)
 	push 'uint16'
-	local data,err = _receive(stream, 2)
+	local data,err = stream:getbytes(2)
 	if not data then return nil,ioerror(err) end
 	if #data < 2 then return nil,"end of stream" end
 	local a,b
@@ -220,7 +194,7 @@ end
 
 function read.uint32(stream, endianness)
 	push 'uint32'
-	local data,err = _receive(stream, 4)
+	local data,err = stream:getbytes(4)
 	if not data then return nil,ioerror(err) end
 	if #data < 4 then return nil,"end of stream" end
 	local a,b,c,d
@@ -351,7 +325,7 @@ end
 
 function read.uint64(stream, endianness)
 	push 'uint64'
-	local data,err = _receive(stream, 8)
+	local data,err = stream:getbytes(8)
 	if not data then return nil,ioerror(err) end
 	if #data < 8 then return nil,"end of stream" end
 	local a,b,c,d,e,f,g,h
@@ -494,7 +468,7 @@ function read.sizedbuffer(stream, size_t, ...)
 	if stream.length then
 		assert(stream:length() >= size, "invalid sizedbuffer size, stream is too short")
 	end
-	local value,err = _receive(stream, size)
+	local value,err = stream:getbytes(size)
 	if not value then return nil,ioerror(err) end
 	if #value < size then return nil,"end of stream" end
 	pop()
@@ -643,7 +617,7 @@ function read.paddedvalue(stream, size_t, padding, value_t, ...)
 	-- read serialized value
 	local svalue,err
 	if size > 0 then
-		svalue,err = _receive(stream, size)
+		svalue,err = stream:getbytes(size)
 		if not svalue then return nil,ioerror(err) end
 		if #svalue < size then return nil,"end of stream" end
 	else
@@ -656,7 +630,7 @@ function read.paddedvalue(stream, size_t, padding, value_t, ...)
 	if not value then return nil,err end
 	-- if the buffer is not empty save trailing bytes or generate an error
 	if bvalue:length() > 0 then
-		local __trailing_bytes = bvalue:receive("*a")
+		local __trailing_bytes = bvalue:getbytes(bvalue:length())
 		if padding then
 			-- remove padding
 			if padding=='\0' then
@@ -822,7 +796,7 @@ function read.float(stream, endianness)
 	else
 		error("unknown endianness")
 	end
-	local data,err = _receive(stream, 4)
+	local data,err = stream:getbytes(4)
 	if not data then return nil,ioerror(err) end
 	if #data < 4 then return nil,"end of stream" end
 	pop()
@@ -900,7 +874,7 @@ function read.float(stream, endianness)
 	else
 		error("unknown endianness")
 	end
-	local data,err = _receive(stream, 4)
+	local data,err = stream:getbytes(4)
 	if not data then return nil,ioerror(err) end
 	if #data < 4 then return nil,"end of stream" end
 	pop()
@@ -942,7 +916,7 @@ function read.double(stream, endianness)
 	else
 		error("unknown endianness")
 	end
-	local data,err = _receive(stream, 8)
+	local data,err = stream:getbytes(8)
 	if not data then return nil,ioerror(err) end
 	if #data < 8 then return nil,"end of stream" end
 	local value,err = libstruct.unpack(format, data)
@@ -969,7 +943,7 @@ function read.bytes(stream, count)
 		assert(stream.length, "infinite arrays can only be read from buffers, not infinite streams")
 		count = stream:length()
 	end
-	local data,err = _receive(stream, count)
+	local data,err = stream:getbytes(count)
 	if not data then return nil,ioerror(err) end
 	if #data < count then return nil,"end of stream" end
 	pop()
@@ -1375,7 +1349,7 @@ setmetatable(write, {__index=function(self,k)
 			if not data then
 				return nil,err
 			end
-			local written,err = _send(stream, data)
+			local written,err = stream:putbytes(data)
 			if not written then return nil,ioerror(err) end
 			return true
 		end
@@ -1399,43 +1373,26 @@ local buffer_methods = {}
 local buffer_mt = {__index=buffer_methods}
 
 function buffer(data)
-	return setmetatable({data=data}, buffer_mt)
+	return setmetatable({data=data or ""}, buffer_mt)
 end
 
-local smatch = string.match
-function buffer_methods:receive(pattern, prefix)
-	local prefix = prefix or ""
-	local data = self.data
-	if not data then
-		return nil,"end of buffer"
-	end
-	if smatch(pattern, "^%*a") then
-		self.data = nil
-		return prefix..data
-	elseif smatch(pattern, "^%*l") then
-		return nil,"unsupported pattern"
-	elseif type(pattern)=='number' then
-		if pattern~=math.floor(pattern) or pattern < 0 then
-			return nil,"invalid numerical pattern"
-		end
-		if pattern > #data then
-			self.data = nil
-			return nil,"end of buffer",prefix..data
-		elseif pattern == #data then
-			self.data = nil
-			return prefix..data
-		else
-			self.data = data:sub(pattern+1)
-			return prefix..data:sub(1,pattern)
-		end
+function buffer_methods:getbytes(nbytes)
+	local result
+	if nbytes >= #self.data then
+		result,self.data = self.data,""
 	else
-		return nil,"unknown pattern"
+		result,self.data = self.data:sub(1, nbytes),self.data:sub(nbytes+1)
 	end
+	return result
+end
+
+function buffer_methods:putbytes(data)
+	self.data = self.data..data
+	return #data
 end
 
 function buffer_methods:length()
-	local data = self.data
-	return data and #data or 0
+	return #self.data
 end
 
 ------------------------------------------------------------------------------
@@ -1451,15 +1408,22 @@ function filestream(file)
 	return setmetatable({file=file}, filestream_mt)
 end
 
-function filestream_methods:receive(pattern, prefix)
-	local prefix = prefix or ""
-	local file = self.file
-	local data,err = file:read(pattern)
-	if not data then return data,err end
-	return prefix..data
+function filestream_methods:getbytes(nbytes)
+	assert(type(nbytes)=='number')
+	local data = ""
+	while #data < nbytes do
+		local bytes,err = self.file:read(nbytes - #data)
+		-- eof
+		if bytes==nil and err==nil then break end
+		-- error
+		if not bytes then return nil,err end
+		-- accumulate bytes
+		data = data..bytes
+	end
+	return data
 end
 
-function filestream_methods:send(data)
+function filestream_methods:putbytes(data)
 	return self.file:write(data)
 end
 
@@ -1470,8 +1434,46 @@ function filestream_methods:length()
 	return len - cur
 end
 
-function filestream_methods:skip(nbytes)
-	self.file:seek('cur', nbytes)
+------------------------------------------------------------------------------
+
+local tcpstream_methods = {}
+local tcpstream_mt = {__index=tcpstream_methods}
+
+function tcpstream(socket)
+	-- assumes the passed object behaves like a luasocket TCP socket
+--	if io.type(file)~='file' then
+--		error("bad argument #1 to filestream (file expected, got "..(io.type(file) or type(file))..")", 2)
+--	end
+	return setmetatable({socket=socket}, tcpstream_mt)
+end
+
+function tcpstream_methods:getbytes(nbytes)
+	assert(type(nbytes)=='number')
+	local data = ""
+	while #data < nbytes do
+		local bytes,err = self.socket:receive(nbytes - #data)
+		-- error
+		if not bytes then return nil,err end
+		-- eof
+		if #bytes==0 then break end
+		-- accumulate bytes
+		data = data..bytes
+	end
+	return data
+end
+
+function tcpstream_methods:putbytes(data)
+	assert(type(data)=='string')
+	local total = 0
+	local written,err = self.socket:send(data)
+	while written and written < #data do
+		total = total + written
+		data = data:sub(#written + 1)
+		written,err = self.socket:send(data)
+	end
+	if not written then return nil,err end
+	total = total + written
+	return total
 end
 
 ------------------------------------------------------------------------------
@@ -1765,6 +1767,43 @@ local value = {baz=0}
 assert(_M.read.fields(_M.buffer("\001\002\003\004"), value, foo_s))
 assert(value.baz==0 and value.foo==1 and value.bar==515 and next(value, next(value, next(value, next(value))))==nil)
 
+-- filestream
+
+do
+	require 'io'
+	local file = io.tmpfile()
+	local out = _M.filestream(file)
+	_M.write.bytes(out, "foo", 3)
+	_M.write.cstring(out, "bar")
+	file:seek('set', 0)
+	local in_ = _M.filestream(file)
+	assert(_M.read.cstring(in_)=="foobar")
+	file:close()
+end
+
+-- tcp stream
+
+do
+	require 'socket'
+	local server,port
+	for i=1,10 do
+		port = 50000+i
+		server = socket.bind('*', port)
+		if server then break end
+	end
+	if server then
+		local a = socket.connect('127.0.0.1', port)
+		local b = server:accept()
+		local out = _M.tcpstream(a)
+		_M.write.bytes(out, "foo", 3)
+		_M.write.cstring(out, "bar")
+		local in_ = _M.tcpstream(b)
+		a:send("foo")
+		assert(_M.read.cstring(in_)=="foobar")
+	else
+		print("could not test tcp streams")
+	end
+end
 
 print("all tests passed successfully")
 

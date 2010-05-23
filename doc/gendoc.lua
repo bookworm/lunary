@@ -171,14 +171,12 @@ The `serial.serialize` and `serial.write` tables are a little redundant. It is p
 
 ## %chapterid%.2 - Streams
 
-The Lunary framework was originally created to write a proxy for a binary network protocol. This is why Lunary serialization functions expect a stream object implementing the LuaSocket socket interface. However Lunary provides a way to wrap standard Lua file objects and have them behave as LuaSocket streams.
+The Lunary framework manipulate *stream* objects. When serializing, Lunary will push data to a stream. When deserializing, Lunary will get data from the stream. Stream objects as used by Lunary should be Lua objects (implemented with any indexable Lua type), which provide methods. The methods to implement depend on the serialization functions used, and on the data type that is serialized. For basic data types, the `serial.write` functions expect a `putbytes` method, and the `serial.read` functions expect a `getbytes` methods, defined as:
 
-Stream objects as used by Lunary should be Lua objects (implemented with any indexable Lua type), which provide methods. The methods to implement depend on the serialization functions used, and on the data type that is serialized. For basic data types, the `serial.write` functions expect a `send` method, and the `serial.read` functions expect a `receive` methods, defined as:
+    function stream:putbytes(data)
+    function stream:getbytes(nbytes)
 
-    function stream:send(data)
-    function stream:receive(pattern, [prefix])
-
-where `data` is a Lua string containing the bytes to write to the stream, `pattern` is format specifier as defined in the [file:read](http://www.lua.org/manual/5.1/manual.html#pdf-file:read) standard Lua API, and `prefix` is a string which will be prefixed to the `receive` return value.
+where `data` is a Lua string containing the bytes to write to the stream, `nbytes` is number of bytes to read from the stream. `stream:putbytes` should return the number of bytes actually written, while `stream:getbytes` will return the requested bytes as a string, eventually less than requested in the case of end-of-stream. In case of error, both functions should return nil followed by an error message.
 
 One other methods used by some data types described below is `length`:
 
@@ -186,7 +184,9 @@ One other methods used by some data types described below is `length`:
 
 The `length` method returns the number of bytes available in the stream. For network sockets, this makes no sense, but that information is available for file and buffer streams. That method is used by some data types which serialized length cannot be inferred from the type description or content. For example array running to the end of the file or file section need that method when reading a stream.
 
-As you can guess from the stream API we just described, the Lunary library is not capable of reading or writing data types that are not a multiple of a byte. As a consequence, since there is no way to read anything below 8 bits at once, bit order within a byte is never specified as a type parameter, as opposed to byte order within multi byte types.
+As a convenience, and because these are the data interfaces most often used with Lunary, wrappers for Lua files, LuaSocket TCP sockets and simple string buffers are provided. For more information, see `serial.buffer`, `serial.filestream` and `serial.tcpstream` below.
+
+As you can guess from the stream API we just described, the Lunary library is not currently capable of reading or writing data types that are not a multiple of a byte. As a consequence, since there is no way to read anything below 8 bits at once, bit order within a byte is never specified as a type parameter, as opposed to byte order within multi byte types.
 
 ## %chapterid%.3 - Compound data types
 
@@ -245,11 +245,15 @@ You can then read such strings with the `serial.read.string32` function, or even
 
 ### serial.buffer (data)
 
-This function will create an input stream object based on a Lua string. It implements the `receive` and `length` methods. It is used to deserialize an object from an in-memory byte buffer. To serialize an object in-memory, you can simply use the Lunary `serial.serialize` functions which will generate a Lua string.
+This function will create an input stream object based on a Lua string. It implements the `getbytes` and `putbytes` methods. It is used to deserialize an object from an in-memory byte buffer. To serialize an object in-memory, you can simply use the Lunary `serial.serialize` functions which will generate a Lua string.
 
 ### serial.filestream (file)
 
-This function will create a stream object based on a standard Lua file object. It will indirectly map its `receive`, `send` and `length` methods to the `read`, `write` and `seek` methods of the file object.
+This function will create a stream object based on a standard Lua file object. It will indirectly map its `getbytes`, `putbytes` and `length` methods to the `read`, `write` and `seek` methods of the file object.
+
+### serial.tcpstream (sock)
+
+This function will create a stream object based on a LuaSocket TCP socket object. It will indirectly map its `getbytes` and `putbytes` methods to the `receive` abd `send` methods of the socket object.
 
 ### serial.util.enum (half_enum)
 
