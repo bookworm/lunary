@@ -25,6 +25,11 @@ pureinstall:
 install:build pureinstall
 	install serial/*.$(DLLEXT) $(INSTALL_BIN)/serial
 
+uninstall:
+	rm -r $(INSTALL_BIN)/serial
+	rm -r $(INSTALL_LUA)/serial
+	rm -r $(INSTALL_LUA)/serial.lua
+
 serial/optim.so: CPPFLAGS+=-Dluaopen_module=luaopen_serial_optim
 
 %.$(DLLEXT): %.c
