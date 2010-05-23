@@ -8,6 +8,7 @@ PREFIX?=/usr/local
 INSTALL_LUA=$(PREFIX)/share/lua/5.1
 INSTALL_BIN=$(PREFIX)/lib/lua/5.1
 CPPFLAGS=-Wall -O2
+CFLAGS=-fPIC
 
 .PHONY:build
 build:serial/optim.$(DLLEXT)
