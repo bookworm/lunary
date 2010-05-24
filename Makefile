@@ -4,7 +4,7 @@ else
 DLLEXT=so
 endif
 
-PREFIX?=/usr/local
+PREFIX?=/usr
 INSTALL_LUA=$(PREFIX)/share/lua/5.1
 INSTALL_BIN=$(PREFIX)/lib/lua/5.1
 CPPFLAGS=-Wall -O2

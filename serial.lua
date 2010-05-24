@@ -50,6 +50,67 @@ local pack = function(...) return {n=select('#', ...), ...} end
 
 ------------------------------------------------------------------------------
 
+function read.uint(stream, nbits, endianness)
+	assert(endianness=='le' or endianness=='be', "invalid endianness "..tostring(endianness))
+	push 'uint'
+	if nbits=='*' then
+		assert(stream.bitlength, "infinite precision integers can only be read from streams with a length")
+		nbits = stream:bitlength()
+	end
+	local data,err = stream:getbits(nbits)
+	if not data then return nil,ioerror(err) end
+	if #data < nbits then return nil,"end of stream" end
+--	print(">", string.byte(data, 1, #data))
+	local bits = {string.byte(data, 1, #data)}
+	local value = 0
+	if endianness=='le' then
+		for i,bit in ipairs(bits) do
+			value = value + bit * 2^(i-1)
+		end
+	elseif endianness=='be' then
+		for i,bit in ipairs(bits) do
+			value = value + bit * 2^(nbits-i)
+		end
+	end
+	pop()
+	return value
+end
+
+------------------------------------------------------------------------------
+
+function read.sint(stream, nbits, endianness)
+	assert(endianness=='le' or endianness=='be', "invalid endianness "..tostring(endianness))
+	push 'sint'
+	if nbits=='*' then
+		assert(stream.bitlength, "infinite precision integers can only be read from streams with a length")
+		nbits = stream:bitlength()
+	end
+	assert(nbits >= 2, "signed integers must have at least two bits")
+	local data,err = stream:getbits(nbits)
+	if not data then return nil,ioerror(err) end
+	if #data < nbits then return nil,"end of stream" end
+--	print(">", string.byte(data, 1, #data))
+	local bits = {string.byte(data, 1, #data)}
+	local value = 0
+	if endianness=='le' then
+		for i,bit in ipairs(bits) do
+			value = value + bit * 2^(i-1)
+		end
+	elseif endianness=='be' then
+		for i,bit in ipairs(bits) do
+			value = value + bit * 2^(nbits-i)
+		end
+	end
+	local wrap = 2^(nbits-1)
+	if value >= wrap then
+		value = value - 2*wrap
+	end
+	pop()
+	return value
+end
+
+------------------------------------------------------------------------------
+
 function serialize.uint8(value)
 	push 'uint8'
 	local a = value
@@ -1874,6 +1935,29 @@ do
 		print("could not test tcp streams")
 	end
 end
+
+-- uint
+
+do
+	-- \042\037 -> 0101010010100100
+	assert(_M.read.uint(_M.buffer("\042\037"), 4, 'le')==2+8)
+	assert(_M.read.uint(_M.buffer("\042\037"), 4, 'be')==1+4)
+
+	local b = _M.buffer("\042\037\000")
+	b.byte_endianness = 'be'
+	-- \042\037 'be' -> 0010101000100101
+	assert(_M.read.uint(b, 4, 'le')==4)
+	assert(_M.read.uint(b, 7, 'be')==81)
+	assert(b:bitlength()==5+8)
+
+--	print(_M.read.uint(_M.buffer("\042\037"), 13, 'le'))
+--	print(">", string.byte(_M.buffer("\042\037"):getbits(16), 1, 16))
+	assert(_M.read.uint(_M.buffer("\042\037"), 13, 'le')==2+8+32+256+1024) -- 0101010010100 100
+	assert(_M.read.uint(_M.buffer("\042\037", 'be'), 13, 'le')==4+16+64+1024) -- 0010101000100 101
+	assert(_M.read.uint(_M.buffer("\042\037", 'be'), '*', 'le')==4+16+64+1024+8192+32768) -- 0010101000100101
+end
+
+--
 
 print("all tests passed successfully")
 
