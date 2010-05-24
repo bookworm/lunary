@@ -1369,11 +1369,57 @@ end
 
 ------------------------------------------------------------------------------
 
+local function B2b(bytes, endianness)
+	assert(endianness=='le' or endianness=='be', "invalid endianness "..tostring(endianness))
+	bytes = {string.byte(bytes, 1, #bytes)}
+	local bits = {}
+	for _,byte in ipairs(bytes) do
+		if endianness=='le' then
+			for i=0,7 do
+				bits[#bits+1] = bit.band(byte, 2^i) > 0 and 1 or 0
+			end
+		elseif endianness=='be' then
+			for i=7,0,-1 do
+				bits[#bits+1] = bit.band(byte, 2^i) > 0 and 1 or 0
+			end
+		end
+	end
+	return string.char(unpack(bits))
+end
+
+local stream_methods = {}
+
+function stream_methods:getbits(nbits)
+	local data = ""
+	-- use remaining bits
+	if #self.bits > 0 then
+		local a,b = self.bits:sub(1, nbits),self.bits:sub(nbits+1)
+		data = data..a
+		self.bits = b
+	end
+	if #data < nbits then
+		assert(#self.bits==0)
+		local nbytes = math.ceil((nbits - #data) / 8)
+		local bytes = self:getbytes(nbytes)
+		local bits = B2b(bytes, self.byte_endianness or 'le')
+		local a,b = bits:sub(1, nbits-#data),bits:sub(nbits-#data+1)
+		data = data..a
+		self.bits = b
+	end
+	return data
+end
+
+function stream_methods:bitlength()
+	return #self.bits + self:bytelength() * 8
+end
+
+------------------------------------------------------------------------------
+
 local buffer_methods = {}
 local buffer_mt = {__index=buffer_methods}
 
-function buffer(data)
-	return setmetatable({data=data or ""}, buffer_mt)
+function buffer(data, byte_endianness)
+	return setmetatable({data=data or "", bits="", byte_endianness=byte_endianness}, buffer_mt)
 end
 
 function buffer_methods:getbytes(nbytes)
@@ -1395,17 +1441,20 @@ function buffer_methods:bytelength()
 	return #self.data
 end
 
+buffer_methods.getbits = stream_methods.getbits
+buffer_methods.bitlength = stream_methods.bitlength
+
 ------------------------------------------------------------------------------
 
 local filestream_methods = {}
 local filestream_mt = {__index=filestream_methods}
 
-function filestream(file)
+function filestream(file, byte_endianness)
 	-- assume the passed object behaves like a file
 --	if io.type(file)~='file' then
 --		error("bad argument #1 to filestream (file expected, got "..(io.type(file) or type(file))..")", 2)
 --	end
-	return setmetatable({file=file}, filestream_mt)
+	return setmetatable({file=file, bits="", byte_endianness=byte_endianness}, filestream_mt)
 end
 
 function filestream_methods:getbytes(nbytes)
@@ -1434,17 +1483,20 @@ function filestream_methods:bytelength()
 	return len - cur
 end
 
+filestream_methods.getbits = stream_methods.getbits
+filestream_methods.bitlength = stream_methods.bitlength
+
 ------------------------------------------------------------------------------
 
 local tcpstream_methods = {}
 local tcpstream_mt = {__index=tcpstream_methods}
 
-function tcpstream(socket)
+function tcpstream(socket, byte_endianness)
 	-- assumes the passed object behaves like a luasocket TCP socket
 --	if io.type(file)~='file' then
 --		error("bad argument #1 to filestream (file expected, got "..(io.type(file) or type(file))..")", 2)
 --	end
-	return setmetatable({socket=socket}, tcpstream_mt)
+	return setmetatable({socket=socket, bits="", byte_endianness=byte_endianness}, tcpstream_mt)
 end
 
 function tcpstream_methods:getbytes(nbytes)
@@ -1475,6 +1527,9 @@ function tcpstream_methods:putbytes(data)
 	total = total + written
 	return total
 end
+
+tcpstream_methods.getbits = stream_methods.getbits
+tcpstream_methods.bitlength = stream_methods.bitlength
 
 ------------------------------------------------------------------------------
 
@@ -1766,6 +1821,21 @@ assert(value.foo==1 and value.bar==515 and next(value, next(value, next(value)))
 local value = {baz=0}
 assert(_M.read.fields(_M.buffer("\001\002\003\004"), value, foo_s))
 assert(value.baz==0 and value.foo==1 and value.bar==515 and next(value, next(value, next(value, next(value))))==nil)
+
+-- buffers
+
+do
+	local b = _M.buffer("\042\037")
+	-- 0010010100101010
+	assert(b:getbits(3)=='\0\1\0')
+	assert(b:getbits(8)=='\1\0\1\0\0\1\0\1')
+
+	local b = _M.buffer("\042\037")
+	b.byte_endianness = 'be'
+	-- 0010101000100101
+	assert(b:getbits(3)=='\0\0\1')
+	assert(b:getbits(8)=='\0\1\0\1\0\0\0\1')
+end
 
 -- filestream
 
