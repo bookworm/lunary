@@ -606,7 +606,7 @@ end
 ------------------------------------------------------------------------------
 
 function serialize.paddedvalue(value, size_t, padding, value_t, ...)
-	push 'sizedvalue'
+	push 'paddedvalue'
 	if type(value_t)~='table' or select('#', ...)>=1 then
 		value_t = {value_t, ...}
 	end
