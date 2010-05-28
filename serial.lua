@@ -1419,7 +1419,7 @@ setmetatable(write, {__index=function(self,k)
 	end
 end})
 
--- force function instanciation for all known types
+-- force function instantiation for all known types
 for type in pairs(serialize) do
 	local _ = write[type]
 end
