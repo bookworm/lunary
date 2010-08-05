@@ -7,8 +7,9 @@ endif
 PREFIX?=/usr/local
 INSTALL_LUA=$(PREFIX)/share/lua/5.1
 INSTALL_BIN=$(PREFIX)/lib/lua/5.1
-CPPFLAGS=-Wall -O2
+CPPFLAGS=-Wall -O2 "-DLUAMOD_API=__attribute__((visibility (\"default\")))"
 CFLAGS=-fPIC
+LDFLAGS=-fvisibility=hidden
 
 build:serial/optim.$(DLLEXT)
 
