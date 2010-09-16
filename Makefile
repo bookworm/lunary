@@ -7,8 +7,9 @@ endif
 PREFIX?=/usr/local
 INSTALL_LUA=$(PREFIX)/share/lua/5.1
 INSTALL_BIN=$(PREFIX)/lib/lua/5.1
-CPPFLAGS=-Wall -O2
+CPPFLAGS=-Wall -O2 "-DLUAMOD_API=__attribute__((visibility (\"default\")))"
 CFLAGS=-fPIC
+LDFLAGS=-fvisibility=hidden
 
 build:serial/optim.$(DLLEXT)
 
@@ -26,9 +27,9 @@ install:build pureinstall
 	install serial/*.$(DLLEXT) $(INSTALL_BIN)/serial
 
 uninstall:
-	rm -r $(INSTALL_BIN)/serial
-	rm -r $(INSTALL_LUA)/serial
-	rm -r $(INSTALL_LUA)/serial.lua
+	rm -rf $(INSTALL_BIN)/serial
+	rm -rf $(INSTALL_LUA)/serial
+	rm -f $(INSTALL_LUA)/serial.lua
 
 serial/optim.so: CPPFLAGS+=-Dluaopen_module=luaopen_serial_optim
 

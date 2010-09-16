@@ -224,7 +224,7 @@ static luaL_Reg functions[] = {
 	{0, 0},
 };
 
-LUALIB_API int luaopen_module(lua_State* L)
+LUAMOD_API int luaopen_module(lua_State* L)
 {
 	luaL_register(L, lua_tostring(L, 1), functions);
 	return 0;
