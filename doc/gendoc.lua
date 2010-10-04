@@ -1,9 +1,6 @@
-local charset = ([[
-vi: encoding=utf-8
-]]):sub(14, -2):upper()
-
 require 'markdown'
 
+local charset = 'UTF-8'
 local file_index = "index.html"
 local file_manual = "manual.html"
 local file_examples = "examples.html"
@@ -580,4 +577,4 @@ OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN
 THE SOFTWARE.
 ]]
 
--- vi: ts=4 sts=4 sw=4
+-- vi: ts=4 sts=4 sw=4 noet
