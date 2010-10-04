@@ -1,3 +1,7 @@
+local libbit,libstruct
+pcall(function() libbit = require 'bit' end)
+pcall(function() libstruct = require 'struct' end)
+
 module(... or 'test', package.seeall)
 
 local util
@@ -50,6 +54,8 @@ local pack = function(...) return {n=select('#', ...), ...} end
 
 ------------------------------------------------------------------------------
 
+if libbit then
+
 function read.uint(stream, nbits, endianness)
 	assert(endianness=='le' or endianness=='be', "invalid endianness "..tostring(endianness))
 	push 'uint'
@@ -74,6 +80,8 @@ function read.uint(stream, nbits, endianness)
 	end
 	pop()
 	return value
+end
+
 end
 
 ------------------------------------------------------------------------------
@@ -455,8 +463,7 @@ end
 
 ------------------------------------------------------------------------------
 
-local success,libbit = pcall(require, 'bit')
-if success then
+if libbit then
 
 function serialize.flags(value, flagset, int_t, ...)
 	push 'flags'
@@ -826,8 +833,7 @@ end
 
 ------------------------------------------------------------------------------
 
-local success,libstruct = pcall(require, 'struct')
-if success then
+if libstruct then
 
 function serialize.float(value, endianness)
 	push 'float'
@@ -946,8 +952,7 @@ end
 
 ------------------------------------------------------------------------------
 
-local success,libstruct = pcall(require, 'struct')
-if success then
+if libstruct then
 
 function serialize.double(value, endianness)
 	push 'double'
@@ -1430,6 +1435,10 @@ end
 
 ------------------------------------------------------------------------------
 
+local stream_methods = {}
+
+if libbit then
+
 local function B2b(bytes, endianness)
 	assert(endianness=='le' or endianness=='be', "invalid endianness "..tostring(endianness))
 	bytes = {string.byte(bytes, 1, #bytes)}
@@ -1437,18 +1446,16 @@ local function B2b(bytes, endianness)
 	for _,byte in ipairs(bytes) do
 		if endianness=='le' then
 			for i=0,7 do
-				bits[#bits+1] = bit.band(byte, 2^i) > 0 and 1 or 0
+				bits[#bits+1] = libbit.band(byte, 2^i) > 0 and 1 or 0
 			end
 		elseif endianness=='be' then
 			for i=7,0,-1 do
-				bits[#bits+1] = bit.band(byte, 2^i) > 0 and 1 or 0
+				bits[#bits+1] = libbit.band(byte, 2^i) > 0 and 1 or 0
 			end
 		end
 	end
 	return string.char(unpack(bits))
 end
-
-local stream_methods = {}
 
 function stream_methods:getbits(nbits)
 	local data = ""
@@ -1472,6 +1479,8 @@ end
 
 function stream_methods:bitlength()
 	return #self.bits + self:bytelength() * 8
+end
+
 end
 
 ------------------------------------------------------------------------------
@@ -1760,6 +1769,8 @@ assert(_M.read.enum(_M.buffer("\002\000"), foo_e, 'uint16', 'le')=='baz')
 
 -- flags
 
+if libbit then
+
 local foo_f = {
 	bar = 1,
 	baz = 2,
@@ -1769,6 +1780,10 @@ local value = _M.read.flags(_M.buffer("\001"), foo_e, 'uint8')
 assert(value.bar==true and next(value, next(value))==nil)
 local value = _M.read.flags(_M.buffer("\003\000"), foo_e, 'uint16', 'le')
 assert(value.bar==true and value.baz==true and next(value, next(value, next(value)))==nil)
+
+else
+	print("cannot test 'flags' datatype (optional dependency 'bit' missing)")
+end
 
 -- bytes
 
@@ -1885,7 +1900,7 @@ assert(value.baz==0 and value.foo==1 and value.bar==515 and next(value, next(val
 
 -- buffers
 
-do
+if libbit then
 	local b = _M.buffer("\042\037")
 	-- 0010010100101010
 	assert(b:getbits(3)=='\0\1\0')
@@ -1896,6 +1911,8 @@ do
 	-- 0010101000100101
 	assert(b:getbits(3)=='\0\0\1')
 	assert(b:getbits(8)=='\0\1\0\1\0\0\0\1')
+else
+	print("cannot test bit streams (optional dependency 'bit' missing)")
 end
 
 -- filestream
@@ -1939,7 +1956,7 @@ end
 
 -- uint
 
-do
+if libbit then
 	-- \042\037 -> 0101010010100100
 	assert(_M.read.uint(_M.buffer("\042\037"), 4, 'le')==2+8)
 	assert(_M.read.uint(_M.buffer("\042\037"), 4, 'be')==1+4)
@@ -1956,6 +1973,8 @@ do
 	assert(_M.read.uint(_M.buffer("\042\037"), 13, 'le')==2+8+32+256+1024) -- 0101010010100 100
 	assert(_M.read.uint(_M.buffer("\042\037", 'be'), 13, 'le')==4+16+64+1024) -- 0010101000100 101
 	assert(_M.read.uint(_M.buffer("\042\037", 'be'), '*', 'le')==4+16+64+1024+8192+32768) -- 0010101000100101
+else
+	print("cannot test 'uint' datatype (optional dependency 'bit' missing)")
 end
 
 --
