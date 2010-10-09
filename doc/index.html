@@ -11,7 +11,7 @@ lang="en">
 <body>
 
 <div class="chapter" id="header">
-<img width="128" height="128" alt="Lunary" src="lunary.png"/>
+<img width="128" height="128" alt="Lunary" src="logo.png"/>
 <p>A binary format I/O framework for Lua</p>
 <p class="bar">
 <a href="index.html">home</a> &middot;
@@ -59,12 +59,22 @@ lang="en">
 <div class="chapter">
 <h1>2 - <a name="download">Download</a></h1>
 
-<p>Lunary sources are available in its <a href="http://piratery.net/hg/lunary/">Mercurial repository</a>:</p>
+<p>Lunary sources are available in its <a href="http://hg.piratery.net/lunary/">Mercurial repository</a>:</p>
 
-<pre><code>hg clone http://piratery.net/hg/lunary/
+<pre><code>hg clone http://hg.piratery.net/lunary/
 </code></pre>
 
-<p>Tarballs of the latest code can be downloaded directly from there: as <a href="http://piratery.net/hg/lunary/archive/tip.tar.gz">gz</a>, <a href="http://piratery.net/hg/lunary/archive/tip.tar.bz2">bz2</a> or <a href="http://piratery.net/hg/lunary/archive/tip.zip">zip</a>.</p>
+<p>Tarballs of the latest code can be downloaded directly from there: as <a href="http://hg.piratery.net/lunary/archive/tip.tar.gz">gz</a>, <a href="http://hg.piratery.net/lunary/archive/tip.tar.bz2">bz2</a> or <a href="http://hg.piratery.net/lunary/archive/tip.zip">zip</a>.</p>
+
+<p>Finally, I published some rockspecs. To get a full Lunary (with optional dependencies), simply run:</p>
+
+<pre><code>luarocks install lunary
+</code></pre>
+
+<p>If you're on a platform without a C compiler, and no pre-built rocks are available, you can still get most of the Lunary functionality with its pure-Lua core:</p>
+
+<pre><code>luarocks install lunary-core
+</code></pre>
 
 </div>
 
@@ -86,7 +96,7 @@ lang="en">
 </div>
 
 <div class="chapter" id="footer">
-<small>Last update: 2010-05-23 05:19:56 CEST</small>
+<small>Last update: 2010-10-09 21:35:09 CEST</small>
 </div>
 
 </body>

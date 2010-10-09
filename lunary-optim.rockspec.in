@@ -7,7 +7,7 @@ source = {
 description = {
 	summary = "Optimizations for Lunary.",
 	detailed = [[Lunary is a framework to read and write structured binary data from and to files or network connections. This rock provides faster implementation of some of the built-in datatypes of Lunary.]],
-	homepage = 'http://lunary.luaforge.net',
+	homepage = 'http://piratery.net/lunary/',
 	license = 'MIT',
 }
 dependencies = {

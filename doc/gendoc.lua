@@ -31,7 +31,7 @@ lang="en">
 ]])
 	print([[
 <div class="chapter" id="header">
-<img width="128" height="128" alt="Lunary" src="lunary.png"/>
+<img width="128" height="128" alt="Lunary" src="logo.png"/>
 <p>A binary format I/O framework for Lua</p>
 <p class="bar">
 <a href="]]..file_index..[[">home</a> &middot;
@@ -117,11 +117,19 @@ Here are some points that I'm going to improve in the near future:
 ]])
 
 chapter('<a name="download">Download</a>', [[
-Lunary sources are available in its [Mercurial repository](http://piratery.net/hg/lunary/):
+Lunary sources are available in its [Mercurial repository](http://hg.piratery.net/lunary/):
 
-    hg clone http://piratery.net/hg/lunary/
+    hg clone http://hg.piratery.net/lunary/
 
-Tarballs of the latest code can be downloaded directly from there: as [gz](http://piratery.net/hg/lunary/archive/tip.tar.gz), [bz2](http://piratery.net/hg/lunary/archive/tip.tar.bz2) or [zip](http://piratery.net/hg/lunary/archive/tip.zip).
+Tarballs of the latest code can be downloaded directly from there: as [gz](http://hg.piratery.net/lunary/archive/tip.tar.gz), [bz2](http://hg.piratery.net/lunary/archive/tip.tar.bz2) or [zip](http://hg.piratery.net/lunary/archive/tip.zip).
+
+Finally, I published some rockspecs. To get a full Lunary (with optional dependencies), simply run:
+
+    luarocks install lunary
+
+If you're on a platform without a C compiler, and no pre-built rocks are available, you can still get most of the Lunary functionality with its pure-Lua core:
+
+    luarocks install lunary-core
 ]])
 
 chapter('<a name="installation">Installation</a>', [[
@@ -556,7 +564,7 @@ footer()
 ------------------------------------------------------------------------------
 
 --[[
-Copyright (c) 2009 Jérôme Vuarand
+Copyright (c) 2010 Jérôme Vuarand
 
 Permission is hereby granted, free of charge, to any person obtaining a copy
 of this software and associated documentation files (the "Software"), to deal
