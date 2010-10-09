@@ -17,7 +17,13 @@ dependencies = {
 build = {
 	type = "builtin",
 	modules = {
-		["serial.optim"] = {"serial/optim.c", defines={'LUAMOD_API=LUALIB_API'}},
+		['serial.optim'] = {
+			sources = { 'serial/optim.c' },
+			defines = {
+				'LUAMOD_API=LUALIB_API',
+				'luaopen_module=luaopen_serial_optim',
+			},
+		},
 	},
 }
 
