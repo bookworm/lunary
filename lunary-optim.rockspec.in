@@ -1,0 +1,23 @@
+package = "lunary-optim"
+version = "${version}"
+source = {
+	url = "http://hg.piratery.net/lunary/archive/${rev}.tar.gz",
+	dir = "lunary-${rev}",
+}
+description = {
+	summary = "Optimizations for Lunary.",
+	detailed = [[Lunary is a framework to read and write structured binary data from and to files or network connections. This rock provides faster implementation of some of the built-in datatypes of Lunary.]],
+	homepage = "http://lunary.luaforge.net",
+	license = "MIT",
+}
+dependencies = {
+	"lua ~> 5.1",
+	"lunary-core ${version}",
+}
+build = {
+	type = "builtin",
+	modules = {
+		["serial.optim"] = {"serial/optim.c", defines={'LUAMOD_API=LUALIB_API'}},
+	},
+}
+
