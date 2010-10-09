@@ -1,21 +1,21 @@
-package = "lunary-optim"
-version = "${version}"
+package = 'lunary-optim'
+version = '${version}'
 source = {
-	url = "http://hg.piratery.net/lunary/archive/${rev}.tar.gz",
-	dir = "lunary-${rev}",
+	url = 'http://hg.piratery.net/lunary/archive/${rev}.tar.gz',
+	dir = 'lunary-${rev}',
 }
 description = {
 	summary = "Optimizations for Lunary.",
 	detailed = [[Lunary is a framework to read and write structured binary data from and to files or network connections. This rock provides faster implementation of some of the built-in datatypes of Lunary.]],
-	homepage = "http://lunary.luaforge.net",
-	license = "MIT",
+	homepage = 'http://lunary.luaforge.net',
+	license = 'MIT',
 }
 dependencies = {
-	"lua ~> 5.1",
-	"lunary-core ${version}",
+	'lua ~> 5.1',
+	'lunary-core ${version}',
 }
 build = {
-	type = "builtin",
+	type = 'builtin',
 	modules = {
 		['serial.optim'] = {
 			sources = { 'serial/optim.c' },
@@ -27,3 +27,4 @@ build = {
 	},
 }
 
+-- vi: ft=lua
