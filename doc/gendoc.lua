@@ -5,6 +5,9 @@ local file_index = "index.html"
 local file_manual = "manual.html"
 local file_examples = "examples.html"
 
+-- generate logo
+os.execute('convert -resize 448x448 logo.ps -crop 128x128+300+40 logo.png')
+
 ------------------------------------------------------------------------------
 
 function print(...)
