@@ -1975,6 +1975,15 @@ if libbit then
 	assert(_M.read.uint(_M.buffer("\042\037"), 13, 'le')==2+8+32+256+1024) -- 0101010010100 100
 	assert(_M.read.uint(_M.buffer("\042\037", 'be'), 13, 'le')==4+16+64+1024) -- 0010101000100 101
 	assert(_M.read.uint(_M.buffer("\042\037", 'be'), '*', 'le')==4+16+64+1024+8192+32768) -- 0010101000100101
+
+	local t = _M.read.array(_M.buffer("\042\037"), 13, 'uint', 1) -- 0101010010100 100
+	assert(type(t)=='table')
+	assert(#t==13)
+	assert(t[1]==0)
+	assert(t[4]==1)
+	assert(t[7]==0)
+	assert(t[11]==1)
+	assert(t[13]==0)
 else
 	print("cannot test 'uint' datatype (optional dependency 'bit' missing)")
 end
