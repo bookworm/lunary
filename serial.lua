@@ -57,7 +57,7 @@ local pack = function(...) return {n=select('#', ...), ...} end
 if libbit then
 
 function read.uint(stream, nbits, endianness)
-	assert(endianness=='le' or endianness=='be', "invalid endianness "..tostring(endianness))
+	assert(nbits==1 or endianness=='le' or endianness=='be', "invalid endianness "..tostring(endianness))
 	push 'uint'
 	if nbits=='*' then
 		assert(stream.bitlength, "infinite precision integers can only be read from streams with a length")
@@ -69,7 +69,9 @@ function read.uint(stream, nbits, endianness)
 --	print(">", string.byte(data, 1, #data))
 	local bits = {string.byte(data, 1, #data)}
 	local value = 0
-	if endianness=='le' then
+	if nbits==1 then
+		value = bits[1]
+	elseif endianness=='le' then
 		for i,bit in ipairs(bits) do
 			value = value + bit * 2^(i-1)
 		end
