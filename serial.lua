@@ -55,7 +55,11 @@ local pack = function(...) return {n=select('#', ...), ...} end
 ------------------------------------------------------------------------------
 
 function skip(stream, n)
-	stream:skip(n)
+	return stream:skip(n)
+end
+
+function seek(stream, whence, n)
+	return stream:seek(whence, n)
 end
 
 if libbit then
@@ -1519,7 +1523,11 @@ end
 
 function filestream_methods:skip(n)
 	local cur = self.file:seek()
-	self.file:seek('set', cur + n)
+	return self.file:seek('set', cur + n)
+end
+
+function filestream_methods:seek(whence, n)
+	return self.file:seek(whence, n)
 end
 
 buffer_methods.getbits = stream_methods.getbits
