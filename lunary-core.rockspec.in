@@ -1,7 +1,7 @@
 package = 'lunary-core'
 version = '${version}'
 source = {
-	url = 'http://hg.piratery.net/lunary/archive/${rev}.tar.gz',
+	url = 'git://github.com/bookworm/lunary.git',
 	dir = 'lunary-${rev}',
 }
 description = {
