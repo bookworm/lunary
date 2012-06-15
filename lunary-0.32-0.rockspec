@@ -13,8 +13,8 @@ dependencies = {
 	'lua ~> 5.1',
 	'luabitop',
 	'struct',
-	'lunary-core  0.32',
-	'lunary-optim 0.32',
+	'lunary-core',
+	'lunary-optim',
 }
 build = { type = 'none' }
 

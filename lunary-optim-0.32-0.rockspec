@@ -11,7 +11,7 @@ description = {
 }
 dependencies = {
 	'lua ~> 5.1',
-	'lunary-core 0.32',
+	'lunary-core',
 }
 build = {
 	type = 'builtin',
