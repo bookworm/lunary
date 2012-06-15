@@ -54,6 +54,10 @@ local pack = function(...) return {n=select('#', ...), ...} end
 
 ------------------------------------------------------------------------------
 
+function skip(stream, n)
+	stream:skip(n)
+end
+
 if libbit then
 
 function read.uint(stream, nbits, endianness)
@@ -1511,6 +1515,11 @@ end
 
 function buffer_methods:bytelength()
 	return #self.data
+end
+
+function filestream_methods:skip(n)
+	local cur = self.file:seek()
+	self.file:seek('set', cur + n)
 end
 
 buffer_methods.getbits = stream_methods.getbits
