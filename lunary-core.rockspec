@@ -1,5 +1,5 @@
 package = 'lunary-core'
-version = '0.32'
+version = "0.32-0"
 source = {
 	url = 'git://github.com/bookworm/lunary.git',
 }
